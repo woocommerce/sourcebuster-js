@@ -6,31 +6,45 @@ Forked from [alex35mil/sourcebuster-js](https://github.com/alex35mil/sourcebuste
 
 ---
 
-
 ## About
 * Sourcebuster tracks the sources of your site’s visitors and stores the data in the cookies for further analysis.
 * It handles sources-overriding just like Google Analytics does.
 * It’s written in pure JavaScript, without any dependency from third-party libraries.
 * You can use received data for:
- * phones change
- * site content change
- * export data within forms to your CRM or analysis system.
+  * Phones change
+  * Site content change
+  * Exporting data within forms to your CRM or analysis system.
 
 ## Links
 
 [Download](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) &middot; [Upgrade guide](UPGRADING.md) &middot; [Changelog](CHANGELOG.md) 
 
-## Install
+## Build
+Building the package (`dist` files and `public` demo HTML files)
+```bash
+nvm use 
+# or 
+# nvm install
 
-```shell
-# from `npm`
-npm install --save sourcebuster
+npm install
 
-# or `bower`
-bower install --save sourcebuster
+npm run build
+```
+Note that you need to install the [Slim gem](https://github.com/slim-template/slim) in order to successfully build the `public` demo HTML files:
+```bash
+gem install slim
+# or likely 
+# sudo gem install slim
 ```
 
-Or you can [download this repo](https://github.com/alexfedoseev/sourcebuster-js/archive/master.zip) and use `sourcebuster.min.js` from `/dist` folder.
+## Install (Woo dist)
+
+```shell
+# with `npm`
+npm install github:woocommerce/sourcebuster-js#v1.1.2
+```
+
+Or you can [download this repo](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) and use `sourcebuster.min.js` from the `/dist` folder.
 
 ## Setup
 I'm gonna walk you through the inline-HTML setup pattern, but keep in mind, that Sourcebuster is available as `CommonJS` / `AMD` module, so you can `require` it as dependency as well.
@@ -187,7 +201,7 @@ The rules are the same with Google Analytics:
 
 Explanation to `referral` logic: sometimes visitor within the current visit (session) comes to the website from the “source” which is not actually a “source”. For example, it can be visit from the email service, where he had a registration activation link.
 
-#### domain
+#### Domain
 
 ```javascript
 domain: {
@@ -196,7 +210,7 @@ domain: {
 }
 ```
 
-Setting up cookies domain.
+#### Setting up cookies domain.
 
 First of all lets talk about how script handles **the absence** of this custom option: if no value is set, cookies will be placed for **current domain and all its subdomains**.
 
@@ -372,6 +386,7 @@ This will give you the following results:
 * utm_campaign: google_cpc
 * utm_content:  (none)
 * utm_term: (none)
+* utm_id: (none)
 
 You can provide a custom `utm_campaign` name via `campaign_param` and value of this GET-param:
 http://statica.alexfedoseev.com/sourcebuster-js/?gclid=sMtH&my_adwords_campaign=test_custom
@@ -383,6 +398,7 @@ You'll get the following:
 * utm_campaign: test_custom
 * utm_content:  (none)
 * utm_term: (none)
+* utm_id: (none)
 
 **WARNING**
 * If there is original utm-param in request (`utm_source`, `utm_medium`, `utm_campaign`), it will override `gclid` param and `campaign_param` param value.
@@ -461,7 +477,10 @@ Campaign. Value of utm_campaign.
 Content. Value of utm_content.
 
 * `sbjs.get.current.trm`
-Keyword. Value of utm_term.
+  Keyword. Value of utm_term.
+
+* `sbjs.get.current.id`
+  Keyword. Value of utm_id.
 
 
 #### `sbjs.get.current_add`
