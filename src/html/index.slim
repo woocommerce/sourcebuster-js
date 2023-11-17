@@ -17,11 +17,9 @@ html
         h1 Sourcebuster JS
 
       section [id="src-links"]
-        a [href="http://www.alexfedoseev.com/post/40/sourcebuster-js" target="_blank"] About
+        a [href="https://github.com/woocommerce/sourcebuster-js" target="_blank"] GitHub
         | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-        a [href="https://github.com/alexfedoseev/sourcebuster-js" target="_blank"] GitHub
-        | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-        a [href="https://github.com/alexfedoseev/sourcebuster-js/archive/master.zip"] Download from GitHub
+        a [href="https://github.com/woocommerce/sourcebuster-js/archive/master.zip"] Download from GitHub
 
       table
         tr
@@ -51,6 +49,9 @@ html
               tr
                 td [class="sb-table-param-type"] utm_term:
                 td [class="sb-table-param-value" id="sb_first_trm"]
+              tr
+                td [class="sb-table-param-type"] utm_id:
+                td [class="sb-table-param-value" id="sb_first_id"]
           td
             table
               tr
@@ -71,6 +72,9 @@ html
               tr
                 td [class="sb-table-param-type"] utm_term:
                 td [class="sb-table-param-value" id="sb_current_trm"]
+              tr
+                td [class="sb-table-param-type"] utm_id:
+                td [class="sb-table-param-value" id="sb_current_id"]
 
       table
         tr
@@ -119,17 +123,13 @@ html
 
         sbjs.init({
           lifetime: 3,
-          domain: {
-            host: 'statica.alexfedoseev.com',
-            isolate: true
-          },
           referrals: [
             {
               host: 'plus.url.google.com',
               display: 'plus.google.com :)'
             }
           ],
-          custom_campaign: 'my_adwords_campaign',
+          custom_campaign: 'custom_adwords_campaign',
           promocode: true,
           callback: placeData
         });
@@ -141,6 +141,7 @@ html
           document.getElementById('sb_first_cmp').innerHTML       = sb.first.cmp;
           document.getElementById('sb_first_cnt').innerHTML       = sb.first.cnt;
           document.getElementById('sb_first_trm').innerHTML       = sb.first.trm;
+          document.getElementById('sb_first_id').innerHTML        = sb.first.id;
 
           document.getElementById('sb_current_typ').innerHTML     = sb.current.typ;
           document.getElementById('sb_current_src').innerHTML     = sb.current.src;
@@ -148,6 +149,7 @@ html
           document.getElementById('sb_current_cmp').innerHTML     = sb.current.cmp;
           document.getElementById('sb_current_cnt').innerHTML     = sb.current.cnt;
           document.getElementById('sb_current_trm').innerHTML     = sb.current.trm;
+          document.getElementById('sb_current_id').innerHTML      = sb.current.id;
 
           document.getElementById('sb_first_add_fd').innerHTML    = sb.first_add.fd;
           document.getElementById('sb_first_add_ep').innerHTML    = sb.first_add.ep;
@@ -172,31 +174,31 @@ html
         h2 Test Links
         h3 UTM
         p
-          a [href="?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js&utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса"] ?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...
+          a [href="?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js&utm_term=sourcebuster_js_google_keyword o simplemente una clave de google&utm_id=20110927"] ?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...
           br
-          a [href="?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js&utm_term=sourcebuster_js_google_keyword или просто ключ гугла"] ?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...
+          a [href="?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js&utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса&utm_id=20110927"] ?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...
 
-        h3 Organic
-        p
-          a [href="https://www.google.ru/search?q=statica+alexfedoseev+sourcebuster-js"] Google
-          | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-          a [href="http://yandex.ru/yandsearch?lr=213&text=statica+alexfedoseev+sourcebuster+js"] Yandex
-          | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-          a [href="http://search.aol.com/aol/search?enabled_terms=&s_it=comsearch&q=statica+alexfedoseev+sourcebuster+js"] AOL (predefined)
-          | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-          a [href="http://nova.rambler.ru/search?utm_source=nhp&query=statica+alexfedoseev+sourcebuster+js&btnG=%D0%9D%D0%B0%D0%B9%D1%82%D0%B8"] Rambler (custom)
+        / h3 Organic
+        / p
+        /   a [href="https://www.google.ru/search?q=statica+alexfedoseev+sourcebuster-js"] Google
+        /   | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        /   a [href="http://yandex.ru/yandsearch?lr=213&text=statica+alexfedoseev+sourcebuster+js"] Yandex
+        /   | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        /   a [href="http://search.aol.com/aol/search?enabled_terms=&s_it=comsearch&q=statica+alexfedoseev+sourcebuster+js"] AOL (predefined)
+        /   | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        /   a [href="http://nova.rambler.ru/search?utm_source=nhp&query=statica+alexfedoseev+sourcebuster+js&btnG=%D0%9D%D0%B0%D0%B9%D1%82%D0%B8"] Rambler (custom)
 
-        h3 Referral
-        p
-          a [href="http://alexfedoseev.livejournal.com/86404.html"] livejournal.com
-          | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-          a [href="http://www.alexfedoseev.com/post/40/sourcebuster-js"] alexfedoseev.com
+        / h3 Referral
+        / p
+        /   a [href="http://alexfedoseev.livejournal.com/86404.html"] livejournal.com
+        /   | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        /   a [href="http://www.alexfedoseev.com/post/40/sourcebuster-js"] alexfedoseev.com
 
-        h3 Referral Custom
-        p
-          a [href="https://twitter.com/alexfedoseev/status/481686942820478976"] Twitter
-          | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
-          a [href="https://plus.google.com/+%D0%9B%D1%91%D1%88%D0%B0%D0%A4%D0%B5%D0%B4%D0%BE%D1%81%D0%B5%D0%B5%D0%B2/posts/e1NqiXSquPo"] Google+
+        / h3 Referral Custom
+        / p
+        /   a [href="https://twitter.com/alexfedoseev/status/481686942820478976"] Twitter
+        /   | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+        /   a [href="https://plus.google.com/+%D0%9B%D1%91%D1%88%D0%B0%D0%A4%D0%B5%D0%B4%D0%BE%D1%81%D0%B5%D0%B5%D0%B2/posts/e1NqiXSquPo"] Google+
 
 
     footer
