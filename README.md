@@ -1,8 +1,11 @@
 # Sourcebuster JS
 
-#### 1.0.5 is released.
 
-Read [upgrade guide](UPGRADING.md) for details.
+Forked from [alex35mil/sourcebuster-js](https://github.com/alex35mil/sourcebuster-js/) for use in [woocommerce/woocommerce](https://github.com/woocommerce/woocommerce).
+
+
+---
+
 
 ## About
 * Sourcebuster tracks the sources of your site’s visitors and stores the data in the cookies for further analysis.
@@ -15,7 +18,7 @@ Read [upgrade guide](UPGRADING.md) for details.
 
 ## Links
 
-[Download](https://github.com/alexfedoseev/sourcebuster-js/archive/master.zip) &middot; [Upgrade guide](UPGRADING.md) &middot; [Changelog](CHANGELOG.md) &middot; [Test page](http://statica.alexfedoseev.com/sourcebuster-js/)
+[Download](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) &middot; [Upgrade guide](UPGRADING.md) &middot; [Changelog](CHANGELOG.md) 
 
 ## Install
 
