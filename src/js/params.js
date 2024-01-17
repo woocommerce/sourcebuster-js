@@ -30,6 +30,9 @@ module.exports = {
     // Set `user ip`
     params.user_ip = user.user_ip || terms.none;
 
+    // Set `single cookie`
+    params.single_cookie = user.single_cookie || false;
+
     // Set `promocode`
     if (user.promocode) {
       params.promocode = {};
