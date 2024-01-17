@@ -28,7 +28,8 @@ var data = {
     first_extra:      'sbjs_first_add',
     session:          'sbjs_session',
     udata:            'sbjs_udata',
-    promocode:        'sbjs_promo'
+    promocode:        'sbjs_promo',
+    single:           'sbjs_current',
   },
 
   service: {
@@ -336,9 +337,20 @@ module.exports = function(prefs) {
 
   var p         = params.fetch(prefs);
   var get_param = uri.getParam();
-  var domain    = p.domain.host,
-      isolate   = p.domain.isolate,
-      lifetime  = p.lifetime;
+  var domain            = p.domain.host,
+      isolate           = p.domain.isolate,
+      lifetime          = p.lifetime,
+      use_single_cookie = p.single_cookie,
+      single_cookie     = null;
+
+
+  // Overload cookies.set and cookies.get to use a single cookie instead of many
+  if ( use_single_cookie ) {
+    cookies.oldSet = cookies.set;
+    cookies.oldGet = cookies.get;
+    cookies.set = setSingleCookie;
+    cookies.get = getSingleCookie;
+  }
 
   migrations.go(lifetime, domain, isolate);
 
@@ -600,6 +612,82 @@ module.exports = function(prefs) {
     }
   }
 
+  function setSingleCookie(name, value, minutes, domain, excl_subdomains) {
+    if( ! single_cookie ) {
+      loadSingleCookie();
+    }
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    // Set an expiration for the values
+    if( name === data.containers.session ) {
+      value += data.delimiter + 'sts=' + (Math.floor(Date.now() / 1000) + minutes * 60);
+    }
+    single_cookie[cookies.unsbjs(name)] = value;
+  }
+
+  function getSingleCookie(name) {
+    if( ! single_cookie ) {
+      loadSingleCookie();
+    }
+
+    // Simulate checking session expiration
+    if( name === data.containers.session ) {
+        var session = single_cookie[cookies.unsbjs(name)];
+        if( session ) {
+            var sts = session.match(/sts=(\d+)/);
+            if( sts && Math.floor(Date.now() / 1000) > parseInt(sts[1]) ) {
+                delete single_cookie[cookies.unsbjs(name)];
+                return null;
+            }
+        }
+    }
+    return single_cookie[cookies.unsbjs(name)] || cookies.oldGet(name);
+  }
+
+  function loadSingleCookie() {
+    var retrieved_cookie = cookies.oldGet(data.containers.single);
+    if( ! retrieved_cookie ) {
+        single_cookie = {};
+        return;
+    }
+    try {
+      single_cookie = JSON.parse(retrieved_cookie);
+    } catch (error) {
+      single_cookie = {};
+    }
+  }
+
+  function saveSingleCookie() {
+    var deleted_old = single_cookie['do'] !== undefined;
+    single_cookie['do'] = 1;
+    cookies.oldSet(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
+
+    // Delete multi-cookies if they exist
+    if( ! deleted_old ) {
+      var old_cookies = Object.keys(data.containers).map(function (key) {
+        return data.containers[key];
+      });
+      for (var prop in data.service) {
+        if (data.service.hasOwnProperty(prop)) {
+          old_cookies.push(data.service[prop]);
+        }
+      }
+
+      // Delete all instances of data.containers.single in old_cookies
+      var val_remove = data.containers.single;
+      var index = old_cookies.indexOf(val_remove);
+      while (index !== -1) {
+        old_cookies.splice(index, 1);
+        index = old_cookies.indexOf(val_remove);
+      }
+      for (var i = 0; i < old_cookies.length; i++) {
+        cookies.oldSet(old_cookies[i], '', -1, domain, isolate);
+      }
+    }
+  }
+
   (function setData() {
 
     // Main data
@@ -622,7 +710,7 @@ module.exports = function(prefs) {
 
     // Session
     var pages_count;
-    if (!cookies.get(data.containers.session)) {
+    if ( !cookies.get(data.containers.session) ) {
       pages_count = 1;
     } else {
       pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
@@ -635,6 +723,9 @@ module.exports = function(prefs) {
       cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
     }
 
+    if ( use_single_cookie ) {
+      saveSingleCookie();
+    }
   })();
 
   return cookies.parse(data.containers);
@@ -763,6 +854,9 @@ module.exports = {
     // Set `user ip`
     params.user_ip = user.user_ip || terms.none;
 
+    // Set `single cookie`
+    params.single_cookie = user.single_cookie || false;
+
     // Set `promocode`
     if (user.promocode) {
       params.promocode = {};
@@ -851,6 +945,7 @@ module.exports = {
   }
 
 };
+
 },{"./helpers/uri":4,"./terms":9}],9:[function(_dereq_,module,exports){
 "use strict";
 
