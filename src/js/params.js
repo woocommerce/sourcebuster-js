@@ -17,6 +17,8 @@ module.exports = {
     // Set `session length` in minutes
     params.session_length = this.validate.checkInt(user.session_length) || 30;
 
+    params.local_storage = true;
+
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
 

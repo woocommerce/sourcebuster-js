@@ -13,7 +13,7 @@ var sbjs = {
 };
 
 module.exports = sbjs;
-},{"./init":6}],2:[function(_dereq_,module,exports){
+},{"./init":7}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -118,7 +118,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":5,"./terms":9}],3:[function(_dereq_,module,exports){
+},{"./helpers/utils":6,"./terms":10}],3:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -228,6 +228,56 @@ module.exports = {
 },{"../data":2}],4:[function(_dereq_,module,exports){
 "use strict";
 
+var default_cookies = _dereq_('./cookies');
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    // `item` is an object which contains the original value
+    // as well as the time when it's supposed to expire
+    var item = {
+      value: this.encodeData( value ),
+      expiry: (new Date()).getTime() + ( minutes * 60 * 1000 ),
+    };
+    localStorage.setItem(name, JSON.stringify(item));
+  },
+
+  get: function(name) {
+    var item_raw = localStorage.getItem(name);
+    // if the item doesn't exist, return null
+    if (!item_raw) {
+      return null;
+    }
+
+    var item_str = JSON.parse(item_raw);
+    // compare the expiry time of the item with the current time
+    if ((new Date()).getTime() > item_str.expiry) {
+      // If the item is expired, delete the item from storage
+      // and return null
+      localStorage.removeItem(name);
+      return null;
+    }
+
+    return this.decodeData( item_str.value );
+  },
+
+  destroy: function(name, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    localStorage.removeItem(name);
+  },
+
+});
+
+},{"./cookies":3}],5:[function(_dereq_,module,exports){
+"use strict";
+
 module.exports = {
 
   parse: function(str) {
@@ -283,7 +333,7 @@ module.exports = {
   }
 
 };
-},{}],5:[function(_dereq_,module,exports){
+},{}],6:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -321,12 +371,12 @@ module.exports = {
 
 };
 
-},{}],6:[function(_dereq_,module,exports){
+},{}],7:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
     terms       = _dereq_('./terms'),
-    cookies     = _dereq_('./helpers/cookies'),
+    web_storage     = _dereq_('./helpers/cookies'),
     uri         = _dereq_('./helpers/uri'),
     utils       = _dereq_('./helpers/utils'),
     params      = _dereq_('./params'),
@@ -338,7 +388,12 @@ module.exports = function(prefs) {
   var get_param = uri.getParam();
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
-      lifetime  = p.lifetime;
+      lifetime  = p.lifetime,
+      use_local_storage = p.local_storage;
+
+  if ( use_local_storage ) {
+    web_storage = _dereq_('./helpers/local_storage');
+  }
 
   migrations.go(lifetime, domain, isolate);
 
@@ -370,14 +425,14 @@ module.exports = function(prefs) {
     } else if (checkReferer(terms.traffic.organic)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.organic);
-    } else if (!cookies.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
+    } else if (!web_storage.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.referral);
-    } else if (!cookies.get(data.containers.first) && !cookies.get(data.containers.current)) {
+    } else if (!web_storage.get(data.containers.first) && !web_storage.get(data.containers.current)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.typein);
     } else {
-      return cookies.get(data.containers.current);
+      return web_storage.get(data.containers.current);
     }
 
     return sbjs_data;
@@ -594,54 +649,54 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    web_storage.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first_extra)) {
+      web_storage.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
     }
   }
 
   (function setData() {
 
     // Main data
-    cookies.set(data.containers.current, mainData(), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first)) {
-      cookies.set(data.containers.first, cookies.get(data.containers.current), lifetime, domain, isolate);
+    web_storage.set(data.containers.current, mainData(), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first)) {
+      web_storage.set(data.containers.first, web_storage.get(data.containers.current), lifetime, domain, isolate);
     }
 
     // User data
     var visits, udata;
-    if (!cookies.get(data.containers.udata)) {
+    if (!web_storage.get(data.containers.udata)) {
       visits  = 1;
       udata   = data.pack.user(visits, p.user_ip);
     } else {
-      visits  = parseInt(cookies.parse(data.containers.udata)[cookies.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
-      visits  = cookies.get(data.containers.session) ? visits : visits + 1;
+      visits  = parseInt(web_storage.parse(data.containers.udata)[web_storage.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
+      visits  = web_storage.get(data.containers.session) ? visits : visits + 1;
       udata   = data.pack.user(visits, p.user_ip);
     }
-    cookies.set(data.containers.udata, udata, lifetime, domain, isolate);
+    web_storage.set(data.containers.udata, udata, lifetime, domain, isolate);
 
     // Session
     var pages_count;
-    if (!cookies.get(data.containers.session)) {
+    if (!web_storage.get(data.containers.session)) {
       pages_count = 1;
     } else {
-      pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
+      pages_count = parseInt(web_storage.parse(data.containers.session)[web_storage.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    web_storage.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
 
     // Promocode
-    if (p.promocode && !cookies.get(data.containers.promocode)) {
-      cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    if (p.promocode && !web_storage.get(data.containers.promocode)) {
+      web_storage.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
     }
 
   })();
 
-  return cookies.parse(data.containers);
+  return web_storage.parse(data.containers);
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/uri":4,"./helpers/utils":5,"./migrations":7,"./params":8,"./terms":9}],7:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/cookies":3,"./helpers/local_storage":4,"./helpers/uri":5,"./helpers/utils":6,"./migrations":8,"./params":9,"./terms":10}],8:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
@@ -730,7 +785,7 @@ module.exports = {
   ]
 
 };
-},{"./data":2,"./helpers/cookies":3}],8:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/cookies":3}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -749,6 +804,8 @@ module.exports = {
 
     // Set `session length` in minutes
     params.session_length = this.validate.checkInt(user.session_length) || 30;
+
+    params.local_storage = true;
 
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
@@ -851,7 +908,7 @@ module.exports = {
   }
 
 };
-},{"./helpers/uri":4,"./terms":9}],9:[function(_dereq_,module,exports){
+},{"./helpers/uri":5,"./terms":10}],10:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
