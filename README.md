@@ -217,6 +217,7 @@ Basically, configure where the Sourcebuster data will be stored and manipulated:
 - `localStorage` — in browser `local storage`
 - `sessionStorage` — in browser `session storage`
 
+Any other value (or no value) will default to `cookies`.
 
 #### Domain
 
