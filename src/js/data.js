@@ -51,7 +51,9 @@ var data = {
       agent:          'uag'
     },
 
-    promo:            'code'
+    promo:            'code',
+
+    single_expire:    'sxp'
 
   },
 

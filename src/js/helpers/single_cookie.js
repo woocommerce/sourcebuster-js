@@ -16,7 +16,7 @@ module.exports = Object.assign({}, default_cookies, {
 
     // Set an expiration for the values
     if( name === data.containers.session ) {
-      value += data.delimiter + 'sts=' + (Math.floor(Date.now() / 1000) + minutes * 60);
+      value += data.delimiter + data.aliases.single_expire + '=' + (Math.floor(Date.now() / 1000) + minutes * 60);
     }
     single_cookie[default_cookies.unsbjs(name)] = value;
   },
