@@ -13,7 +13,7 @@ var sbjs = {
 };
 
 module.exports = sbjs;
-},{"./init":7}],2:[function(_dereq_,module,exports){
+},{"./init":8}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -118,7 +118,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":6,"./terms":10}],3:[function(_dereq_,module,exports){
+},{"./helpers/utils":7,"./terms":11}],3:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -276,6 +276,18 @@ module.exports = Object.assign({}, default_cookies, {
 });
 
 },{"./cookies":3}],5:[function(_dereq_,module,exports){
+var storageModule = null;
+
+module.exports = {
+	set: function(module) {
+		storageModule = module;
+	},
+	get: function() {
+		return storageModule;
+	}
+};
+
+},{}],6:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -333,7 +345,7 @@ module.exports = {
   }
 
 };
-},{}],6:[function(_dereq_,module,exports){
+},{}],7:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -371,16 +383,17 @@ module.exports = {
 
 };
 
-},{}],7:[function(_dereq_,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
     terms       = _dereq_('./terms'),
-    web_storage     = _dereq_('./helpers/cookies'),
     uri         = _dereq_('./helpers/uri'),
     utils       = _dereq_('./helpers/utils'),
     params      = _dereq_('./params'),
-    migrations  = _dereq_('./migrations');
+    migrations  = _dereq_('./migrations'),
+    storage_init = _dereq_('./helpers/storage_init'),
+    web_storage = _dereq_('./helpers/cookies');
 
 module.exports = function(prefs) {
 
@@ -388,12 +401,9 @@ module.exports = function(prefs) {
   var get_param = uri.getParam();
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
-      lifetime  = p.lifetime,
-      use_local_storage = p.local_storage;
+      lifetime  = p.lifetime;
 
-  if ( use_local_storage ) {
-    web_storage = _dereq_('./helpers/local_storage');
-  }
+  initWebStorage();
 
   migrations.go(lifetime, domain, isolate);
 
@@ -655,6 +665,15 @@ module.exports = function(prefs) {
     }
   }
 
+  function initWebStorage() {
+    switch ( p.web_storage ) {
+      case 'localStorage':
+        web_storage = _dereq_('./helpers/local_storage');
+        break;
+    }
+    storage_init.set( web_storage );
+  }
+
   (function setData() {
 
     // Main data
@@ -696,22 +715,23 @@ module.exports = function(prefs) {
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/local_storage":4,"./helpers/uri":5,"./helpers/utils":6,"./migrations":8,"./params":9,"./terms":10}],8:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/cookies":3,"./helpers/local_storage":4,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":11}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
-    cookies = _dereq_('./helpers/cookies');
+    storage_init = _dereq_('./helpers/storage_init');
 
 module.exports = {
 
   go: function(lifetime, domain, isolate) {
 
+    var web_storage = storage_init.get();
     var migrate = this.migrations,
         _with   = { l: lifetime, d: domain, i: isolate };
 
     var i;
 
-    if (!cookies.get(data.containers.first) && !cookies.get(data.service.migrations)) {
+    if (!web_storage.get(data.containers.first) && !web_storage.get(data.service.migrations)) {
 
       var mids = [];
       for (i = 0; i < migrate.length; i++) { mids.push(migrate[i].id); }
@@ -721,9 +741,9 @@ module.exports = {
         advance += mids[i] + '=1';
         if (i < mids.length - 1) { advance += data.delimiter; }
       }
-      cookies.set(data.service.migrations, advance, _with.l, _with.d, _with.i);
+      web_storage.set(data.service.migrations, advance, _with.l, _with.d, _with.i);
 
-    } else if (!cookies.get(data.service.migrations)) {
+    } else if (!web_storage.get(data.service.migrations)) {
 
       // We have only one migration for now, so just
       for (i = 0; i < migrate.length; i++) {
@@ -740,6 +760,8 @@ module.exports = {
       id: '1418474375998',
       version: '1.0.0-beta',
       go: function(mid, _with) {
+
+        var web_storage = storage_init.get();
 
         var success = mid + '=1',
             fail    = mid + '=0';
@@ -759,25 +781,25 @@ module.exports = {
           }
 
           for (var i = 0; i < _in.length; i++) {
-            if (cookies.get(_in[i])) {
-              var buffer = cookies.get(_in[i]).replace(/(\|)?\|(\|)?/g, safeReplace);
-              cookies.destroy(_in[i], _with.d, _with.i);
-              cookies.destroy(_in[i], _with.d, !_with.i);
-              cookies.set(_in[i], buffer, _with.l, _with.d, _with.i);
+            if (web_storage.get(_in[i])) {
+              var buffer = web_storage.get(_in[i]).replace(/(\|)?\|(\|)?/g, safeReplace);
+              web_storage.destroy(_in[i], _with.d, _with.i);
+              web_storage.destroy(_in[i], _with.d, !_with.i);
+              web_storage.set(_in[i], buffer, _with.l, _with.d, _with.i);
             }
           }
 
           // Update `session`
-          if (cookies.get(data.containers.session)) {
-            cookies.set(data.containers.session, data.pack.session(0), _with.l, _with.d, _with.i);
+          if (web_storage.get(data.containers.session)) {
+            web_storage.set(data.containers.session, data.pack.session(0), _with.l, _with.d, _with.i);
           }
 
           // Yay!
-          cookies.set(data.service.migrations, success, _with.l, _with.d, _with.i);
+          web_storage.set(data.service.migrations, success, _with.l, _with.d, _with.i);
 
         } catch (err) {
           // Oops
-          cookies.set(data.service.migrations, fail, _with.l, _with.d, _with.i);
+          web_storage.set(data.service.migrations, fail, _with.l, _with.d, _with.i);
         }
       }
     }
@@ -785,7 +807,8 @@ module.exports = {
   ]
 
 };
-},{"./data":2,"./helpers/cookies":3}],9:[function(_dereq_,module,exports){
+
+},{"./data":2,"./helpers/storage_init":5}],10:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -908,7 +931,7 @@ module.exports = {
   }
 
 };
-},{"./helpers/uri":5,"./terms":10}],10:[function(_dereq_,module,exports){
+},{"./helpers/uri":6,"./terms":11}],11:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
