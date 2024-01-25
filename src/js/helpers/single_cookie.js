@@ -54,11 +54,13 @@ module.exports = Object.assign({}, default_cookies, {
   },
 
   save: function( lifetime, domain, isolate ) {
+    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
+  },
+
+  deleteOld: function( domain, isolate ) {
     var deleted_old = single_cookie['do'] !== undefined;
     single_cookie['do'] = 1;
-    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
 
-    // Delete multi-cookies if they exist
     if( ! deleted_old ) {
       var old_cookies = Object.keys(data.containers).map(function (key) {
         return data.containers[key];
@@ -80,5 +82,6 @@ module.exports = Object.assign({}, default_cookies, {
         default_cookies.set(old_cookies[i], '', -1, domain, isolate);
       }
     }
-  },
+
+  }
 });

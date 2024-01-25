@@ -52,7 +52,9 @@ var data = {
       agent:          'uag'
     },
 
-    promo:            'code'
+    promo:            'code',
+
+    single_expire:    'sxp'
 
   },
 
@@ -307,7 +309,7 @@ module.exports = Object.assign({}, default_cookies, {
 
     // Set an expiration for the values
     if( name === data.containers.session ) {
-      value += data.delimiter + 'sts=' + (Math.floor(Date.now() / 1000) + minutes * 60);
+      value += data.delimiter + data.aliases.single_expire + '=' + (Math.floor(Date.now() / 1000) + minutes * 60);
     }
     single_cookie[default_cookies.unsbjs(name)] = value;
   },
@@ -345,11 +347,13 @@ module.exports = Object.assign({}, default_cookies, {
   },
 
   save: function( lifetime, domain, isolate ) {
+    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
+  },
+
+  deleteOld: function( domain, isolate ) {
     var deleted_old = single_cookie['do'] !== undefined;
     single_cookie['do'] = 1;
-    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
 
-    // Delete multi-cookies if they exist
     if( ! deleted_old ) {
       var old_cookies = Object.keys(data.containers).map(function (key) {
         return data.containers[key];
@@ -371,7 +375,8 @@ module.exports = Object.assign({}, default_cookies, {
         default_cookies.set(old_cookies[i], '', -1, domain, isolate);
       }
     }
-  },
+
+  }
 });
 
 },{"../data":1,"./cookies":2}],6:[function(_dereq_,module,exports){
