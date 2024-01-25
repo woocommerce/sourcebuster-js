@@ -17,7 +17,7 @@ module.exports = function(prefs) {
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
 
-  // Select web_storage
+  // Select web storage method
   storage_init.set(p.web_storage);
   web_storage = storage_init.get();
 
@@ -314,6 +314,10 @@ module.exports = function(prefs) {
     // Promocode
     if (p.promocode && !web_storage.get(data.containers.promocode)) {
       web_storage.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    }
+
+    if ( web_storage.save ) {
+      web_storage.save( lifetime, domain, isolate );
     }
 
   })();

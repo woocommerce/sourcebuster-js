@@ -13,7 +13,8 @@ var data = {
     first_extra:      'sbjs_first_add',
     session:          'sbjs_session',
     udata:            'sbjs_udata',
-    promocode:        'sbjs_promo'
+    promocode:        'sbjs_promo',
+    single:           'sbjs_current',
   },
 
   service: {
@@ -103,7 +104,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":7,"./terms":12}],2:[function(_dereq_,module,exports){
+},{"./helpers/utils":8,"./terms":13}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -288,9 +289,96 @@ module.exports = Object.assign({}, default_cookies, {
 });
 
 },{"./cookies":2}],5:[function(_dereq_,module,exports){
+"use strict";
+
+var single_cookie = null;
+var data = _dereq_('../data'),
+    default_cookies = _dereq_('./cookies');
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    if( ! single_cookie ) {
+      this.load();
+    }
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    // Set an expiration for the values
+    if( name === data.containers.session ) {
+      value += data.delimiter + 'sts=' + (Math.floor(Date.now() / 1000) + minutes * 60);
+    }
+    single_cookie[default_cookies.unsbjs(name)] = value;
+  },
+
+  get: function(name) {
+    if( ! single_cookie ) {
+      this.load();
+    }
+
+    // Simulate checking session expiration
+    if( name === data.containers.session ) {
+      var session = single_cookie[default_cookies.unsbjs(name)];
+      if( session ) {
+        var sts = session.match(/sts=(\d+)/);
+        if( sts && Math.floor(Date.now() / 1000) > parseInt(sts[1]) ) {
+          delete single_cookie[default_cookies.unsbjs(name)];
+          return null;
+        }
+      }
+    }
+    return single_cookie[default_cookies.unsbjs(name)] || default_cookies.get(name);
+  },
+
+  load: function() {
+    var retrieved_cookie = default_cookies.get(data.containers.single);
+    if( ! retrieved_cookie ) {
+      single_cookie = {};
+      return;
+    }
+    try {
+      single_cookie = JSON.parse(retrieved_cookie);
+    } catch (error) {
+      single_cookie = {};
+    }
+  },
+
+  save: function( lifetime, domain, isolate ) {
+    var deleted_old = single_cookie['do'] !== undefined;
+    single_cookie['do'] = 1;
+    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
+
+    // Delete multi-cookies if they exist
+    if( ! deleted_old ) {
+      var old_cookies = Object.keys(data.containers).map(function (key) {
+        return data.containers[key];
+      });
+      for (var prop in data.service) {
+        if (data.service.hasOwnProperty(prop)) {
+          old_cookies.push(data.service[prop]);
+        }
+      }
+
+      // Delete all instances of data.containers.single in old_cookies
+      var val_remove = data.containers.single;
+      var index = old_cookies.indexOf(val_remove);
+      while (index !== -1) {
+        old_cookies.splice(index, 1);
+        index = old_cookies.indexOf(val_remove);
+      }
+      for (var i = 0; i < old_cookies.length; i++) {
+        default_cookies.set(old_cookies[i], '', -1, domain, isolate);
+      }
+    }
+  },
+});
+
+},{"../data":1,"./cookies":2}],6:[function(_dereq_,module,exports){
 var storage_module = null;
 var local_storage = _dereq_('./local_storage'),
 	session_storage = _dereq_('./session_storage'),
+	single_cookie = _dereq_('./single_cookie'),
 	cookies       = _dereq_('./cookies');
 
 module.exports = {
@@ -303,7 +391,7 @@ module.exports = {
 		storage_type = this.validateType( storage_type );
 		switch ( storage_type ) {
 			case 'singleCookie':
-				storage_module = cookies;
+				storage_module = single_cookie;
 				break;
 			case 'localStorage':
 				storage_module = local_storage;
@@ -321,7 +409,7 @@ module.exports = {
 	}
 };
 
-},{"./cookies":2,"./local_storage":3,"./session_storage":4}],6:[function(_dereq_,module,exports){
+},{"./cookies":2,"./local_storage":3,"./session_storage":4,"./single_cookie":5}],7:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -379,7 +467,7 @@ module.exports = {
   }
 
 };
-},{}],7:[function(_dereq_,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -417,7 +505,7 @@ module.exports = {
 
 };
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
@@ -437,7 +525,7 @@ module.exports = function(prefs) {
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
 
-  // Select web_storage
+  // Select web storage method
   storage_init.set(p.web_storage);
   web_storage = storage_init.get();
 
@@ -736,13 +824,17 @@ module.exports = function(prefs) {
       web_storage.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
     }
 
+    if ( web_storage.save ) {
+      web_storage.save( lifetime, domain, isolate );
+    }
+
   })();
 
   return web_storage.parse(data.containers);
 
 };
 
-},{"./data":1,"./helpers/cookies":2,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":12}],9:[function(_dereq_,module,exports){
+},{"./data":1,"./helpers/cookies":2,"./helpers/storage_init":6,"./helpers/uri":7,"./helpers/utils":8,"./migrations":10,"./params":11,"./terms":13}],10:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
@@ -835,7 +927,7 @@ module.exports = {
 
 };
 
-},{"./data":1,"./helpers/storage_init":5}],10:[function(_dereq_,module,exports){
+},{"./data":1,"./helpers/storage_init":6}],11:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -964,7 +1056,7 @@ module.exports = {
 
 };
 
-},{"./helpers/uri":6,"./terms":12}],11:[function(_dereq_,module,exports){
+},{"./helpers/uri":7,"./terms":13}],12:[function(_dereq_,module,exports){
 "use strict";
 
 var init = _dereq_('./init');
@@ -979,7 +1071,7 @@ var sbjs = {
 };
 
 module.exports = sbjs;
-},{"./init":8}],12:[function(_dereq_,module,exports){
+},{"./init":9}],13:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -1002,5 +1094,5 @@ module.exports = {
 
 };
 
-},{}]},{},[11])(11)
+},{}]},{},[12])(12)
 });

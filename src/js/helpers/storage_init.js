@@ -1,6 +1,7 @@
 var storage_module = null;
 var local_storage = require('./local_storage'),
 	session_storage = require('./session_storage'),
+	single_cookie = require('./single_cookie'),
 	cookies       = require('./cookies');
 
 module.exports = {
@@ -13,7 +14,7 @@ module.exports = {
 		storage_type = this.validateType( storage_type );
 		switch ( storage_type ) {
 			case 'singleCookie':
-				storage_module = cookies;
+				storage_module = single_cookie;
 				break;
 			case 'localStorage':
 				storage_module = local_storage;
