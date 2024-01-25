@@ -1,5 +1,6 @@
 var storage_module = null;
 var local_storage = require('./local_storage'),
+	session_storage = require('./session_storage'),
 	cookies       = require('./cookies');
 
 module.exports = {
@@ -18,7 +19,7 @@ module.exports = {
 				storage_module = local_storage;
 				break;
 			case 'sessionStorage':
-				storage_module = local_storage;
+				storage_module = session_storage;
 				break;
 			case 'cookies':
 			default:

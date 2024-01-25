@@ -13,7 +13,7 @@ var sbjs = {
 };
 
 module.exports = sbjs;
-},{"./init":8}],2:[function(_dereq_,module,exports){
+},{"./init":9}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -118,7 +118,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":7,"./terms":11}],3:[function(_dereq_,module,exports){
+},{"./helpers/utils":8,"./terms":12}],3:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -276,8 +276,36 @@ module.exports = Object.assign({}, default_cookies, {
 });
 
 },{"./cookies":3}],5:[function(_dereq_,module,exports){
+"use strict";
+
+var default_cookies = _dereq_('./cookies');
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    // Don't break the build
+    excl_subdomains = minutes + domain + excl_subdomains;
+    sessionStorage.setItem(this.encodeData(name), value);
+  },
+
+  get: function(name) {
+    return sessionStorage.getItem(this.encodeData(name));
+  },
+
+  destroy: function(name, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    localStorage.removeItem(name);
+  },
+
+});
+
+},{"./cookies":3}],6:[function(_dereq_,module,exports){
 var storage_module = null;
 var local_storage = _dereq_('./local_storage'),
+	session_storage = _dereq_('./session_storage'),
 	cookies       = _dereq_('./cookies');
 
 module.exports = {
@@ -296,7 +324,7 @@ module.exports = {
 				storage_module = local_storage;
 				break;
 			case 'sessionStorage':
-				storage_module = local_storage;
+				storage_module = session_storage;
 				break;
 			case 'cookies':
 			default:
@@ -308,7 +336,7 @@ module.exports = {
 	}
 };
 
-},{"./cookies":3,"./local_storage":4}],6:[function(_dereq_,module,exports){
+},{"./cookies":3,"./local_storage":4,"./session_storage":5}],7:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -366,7 +394,7 @@ module.exports = {
   }
 
 };
-},{}],7:[function(_dereq_,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -404,7 +432,7 @@ module.exports = {
 
 };
 
-},{}],8:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
@@ -425,7 +453,6 @@ module.exports = function(prefs) {
       lifetime  = p.lifetime;
 
   // Select web_storage
-  console.log(p.web_storage);
   storage_init.set(p.web_storage);
   web_storage = storage_init.get();
 
@@ -730,7 +757,7 @@ module.exports = function(prefs) {
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":11}],9:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/cookies":3,"./helpers/storage_init":6,"./helpers/uri":7,"./helpers/utils":8,"./migrations":10,"./params":11,"./terms":12}],10:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
@@ -823,7 +850,7 @@ module.exports = {
 
 };
 
-},{"./data":2,"./helpers/storage_init":5}],10:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/storage_init":6}],11:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -952,7 +979,7 @@ module.exports = {
 
 };
 
-},{"./helpers/uri":6,"./terms":11}],11:[function(_dereq_,module,exports){
+},{"./helpers/uri":7,"./terms":12}],12:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
