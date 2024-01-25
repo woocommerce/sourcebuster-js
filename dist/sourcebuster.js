@@ -1,19 +1,4 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.sbjs=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-"use strict";
-
-var init = _dereq_('./init');
-
-var sbjs = {
-  init: function(prefs) {
-    this.get = init(prefs);
-    if (prefs && prefs.callback && typeof prefs.callback === 'function') {
-      prefs.callback(this.get);
-    }
-  }
-};
-
-module.exports = sbjs;
-},{"./init":9}],2:[function(_dereq_,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.sbjs = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -118,7 +103,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":8,"./terms":12}],3:[function(_dereq_,module,exports){
+},{"./helpers/utils":7,"./terms":12}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -225,7 +210,7 @@ module.exports = {
 
 };
 
-},{"../data":2}],4:[function(_dereq_,module,exports){
+},{"../data":1}],3:[function(_dereq_,module,exports){
 "use strict";
 
 var default_cookies = _dereq_('./cookies');
@@ -275,7 +260,7 @@ module.exports = Object.assign({}, default_cookies, {
 
 });
 
-},{"./cookies":3}],5:[function(_dereq_,module,exports){
+},{"./cookies":2}],4:[function(_dereq_,module,exports){
 "use strict";
 
 var default_cookies = _dereq_('./cookies');
@@ -302,7 +287,7 @@ module.exports = Object.assign({}, default_cookies, {
 
 });
 
-},{"./cookies":3}],6:[function(_dereq_,module,exports){
+},{"./cookies":2}],5:[function(_dereq_,module,exports){
 var storage_module = null;
 var local_storage = _dereq_('./local_storage'),
 	session_storage = _dereq_('./session_storage'),
@@ -336,7 +321,7 @@ module.exports = {
 	}
 };
 
-},{"./cookies":3,"./local_storage":4,"./session_storage":5}],7:[function(_dereq_,module,exports){
+},{"./cookies":2,"./local_storage":3,"./session_storage":4}],6:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -394,7 +379,7 @@ module.exports = {
   }
 
 };
-},{}],8:[function(_dereq_,module,exports){
+},{}],7:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -432,7 +417,7 @@ module.exports = {
 
 };
 
-},{}],9:[function(_dereq_,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
@@ -757,7 +742,7 @@ module.exports = function(prefs) {
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/storage_init":6,"./helpers/uri":7,"./helpers/utils":8,"./migrations":10,"./params":11,"./terms":12}],10:[function(_dereq_,module,exports){
+},{"./data":1,"./helpers/cookies":2,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":12}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
@@ -850,7 +835,7 @@ module.exports = {
 
 };
 
-},{"./data":2,"./helpers/storage_init":6}],11:[function(_dereq_,module,exports){
+},{"./data":1,"./helpers/storage_init":5}],10:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -979,7 +964,22 @@ module.exports = {
 
 };
 
-},{"./helpers/uri":7,"./terms":12}],12:[function(_dereq_,module,exports){
+},{"./helpers/uri":6,"./terms":12}],11:[function(_dereq_,module,exports){
+"use strict";
+
+var init = _dereq_('./init');
+
+var sbjs = {
+  init: function(prefs) {
+    this.get = init(prefs);
+    if (prefs && prefs.callback && typeof prefs.callback === 'function') {
+      prefs.callback(this.get);
+    }
+  }
+};
+
+module.exports = sbjs;
+},{"./init":8}],12:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -1002,5 +1002,5 @@ module.exports = {
 
 };
 
-},{}]},{},[1])(1)
+},{}]},{},[11])(11)
 });
