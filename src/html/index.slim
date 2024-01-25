@@ -9,6 +9,7 @@ html
 
     link     [rel="stylesheet" href="css/sourcebuster.min.css"]
     script   [src="js/sourcebuster.min.js?v=1.0.5"]
+    link     [rel="shortcut icon" href="favicon.ico"]
 
   body
 
@@ -17,6 +18,8 @@ html
         h1 Sourcebuster JS
 
       section [id="src-links"]
+        a [href="index.html"] Index
+        | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
         a [href="https://github.com/woocommerce/sourcebuster-js" target="_blank"] GitHub
         | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
         a [href="https://github.com/woocommerce/sourcebuster-js/archive/master.zip"] Download from GitHub
@@ -123,7 +126,8 @@ html
 
         sbjs.init({
           lifetime: 3,
-          web_storage: 'cookies',
+          session_length: 1,
+          web_storage: 'singleCookie',
           referrals: [
             {
               host: 'plus.url.google.com',
