@@ -17,8 +17,12 @@ module.exports = {
     // Set `session length` in minutes
     params.session_length = this.validate.checkInt(user.session_length) || 30;
 
-    // Determine the `web_storage` to use
-    params.web_storage = 'cookies';
+    // Set `web storage` method
+    if ( user.web_storage && this.validate.isString(user.web_storage) ) {
+        params.web_storage = user.web_storage;
+    } else {
+        params.web_storage = 'cookies';
+    }
 
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);

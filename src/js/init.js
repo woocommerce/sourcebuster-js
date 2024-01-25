@@ -6,8 +6,8 @@ var data        = require('./data'),
     utils       = require('./helpers/utils'),
     params      = require('./params'),
     migrations  = require('./migrations'),
-    storage_init = require('./helpers/storage_init'),
-    web_storage = require('./helpers/cookies');
+    web_storage = require('./helpers/cookies'),
+    storage_init = require('./helpers/storage_init');
 
 module.exports = function(prefs) {
 
@@ -17,7 +17,9 @@ module.exports = function(prefs) {
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
 
-  initWebStorage();
+  // Select web_storage
+  storage_init.set(p.web_storage);
+  web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);
 
@@ -277,15 +279,6 @@ module.exports = function(prefs) {
     if (!web_storage.get(data.containers.first_extra)) {
       web_storage.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
     }
-  }
-
-  function initWebStorage() {
-    switch ( p.web_storage ) {
-      case 'localStorage':
-        web_storage = require('./helpers/local_storage');
-        break;
-    }
-    storage_init.set( web_storage );
   }
 
   (function setData() {

@@ -1,4 +1,6 @@
-var storageModule = null;
+var storage_module = null;
+var local_storage = require('./local_storage'),
+	cookies       = require('./cookies');
 
 module.exports = {
 	validateType: function( storage_type ) {
@@ -6,10 +8,24 @@ module.exports = {
 		var valid_values = ['cookies', 'singleCookie', 'localStorage', 'sessionStorage'];
 		return valid_values.indexOf( storage_type ) > -1 ? storage_type : valid_values[0];
 	},
-	set: function(module) {
-		storageModule = this.validateType( module );
+	set: function( storage_type ) {
+		storage_type = this.validateType( storage_type );
+		switch ( storage_type ) {
+			case 'singleCookie':
+				storage_module = cookies;
+				break;
+			case 'localStorage':
+				storage_module = local_storage;
+				break;
+			case 'sessionStorage':
+				storage_module = local_storage;
+				break;
+			case 'cookies':
+			default:
+				storage_module = cookies;
+		}
 	},
 	get: function() {
-		return storageModule;
+		return storage_module;
 	}
 };

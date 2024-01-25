@@ -276,7 +276,9 @@ module.exports = Object.assign({}, default_cookies, {
 });
 
 },{"./cookies":3}],5:[function(_dereq_,module,exports){
-var storageModule = null;
+var storage_module = null;
+var local_storage = _dereq_('./local_storage'),
+	cookies       = _dereq_('./cookies');
 
 module.exports = {
 	validateType: function( storage_type ) {
@@ -284,15 +286,29 @@ module.exports = {
 		var valid_values = ['cookies', 'singleCookie', 'localStorage', 'sessionStorage'];
 		return valid_values.indexOf( storage_type ) > -1 ? storage_type : valid_values[0];
 	},
-	set: function(module) {
-		storageModule = this.validateType( module );
+	set: function( storage_type ) {
+		storage_type = this.validateType( storage_type );
+		switch ( storage_type ) {
+			case 'singleCookie':
+				storage_module = cookies;
+				break;
+			case 'localStorage':
+				storage_module = local_storage;
+				break;
+			case 'sessionStorage':
+				storage_module = local_storage;
+				break;
+			case 'cookies':
+			default:
+				storage_module = cookies;
+		}
 	},
 	get: function() {
-		return storageModule;
+		return storage_module;
 	}
 };
 
-},{}],6:[function(_dereq_,module,exports){
+},{"./cookies":3,"./local_storage":4}],6:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -397,8 +413,8 @@ var data        = _dereq_('./data'),
     utils       = _dereq_('./helpers/utils'),
     params      = _dereq_('./params'),
     migrations  = _dereq_('./migrations'),
-    storage_init = _dereq_('./helpers/storage_init'),
-    web_storage = _dereq_('./helpers/cookies');
+    web_storage = _dereq_('./helpers/cookies'),
+    storage_init = _dereq_('./helpers/storage_init');
 
 module.exports = function(prefs) {
 
@@ -408,7 +424,10 @@ module.exports = function(prefs) {
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
 
-  initWebStorage();
+  // Select web_storage
+  console.log(p.web_storage);
+  storage_init.set(p.web_storage);
+  web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);
 
@@ -670,15 +689,6 @@ module.exports = function(prefs) {
     }
   }
 
-  function initWebStorage() {
-    switch ( p.web_storage ) {
-      case 'localStorage':
-        web_storage = _dereq_('./helpers/local_storage');
-        break;
-    }
-    storage_init.set( web_storage );
-  }
-
   (function setData() {
 
     // Main data
@@ -720,7 +730,7 @@ module.exports = function(prefs) {
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/local_storage":4,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":11}],9:[function(_dereq_,module,exports){
+},{"./data":2,"./helpers/cookies":3,"./helpers/storage_init":5,"./helpers/uri":6,"./helpers/utils":7,"./migrations":9,"./params":10,"./terms":11}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
@@ -833,8 +843,12 @@ module.exports = {
     // Set `session length` in minutes
     params.session_length = this.validate.checkInt(user.session_length) || 30;
 
-    // Determine the `web_storage` to use
-    params.web_storage = 'cookies';
+    // Set `web storage` method
+    if ( user.web_storage && this.validate.isString(user.web_storage) ) {
+        params.web_storage = user.web_storage;
+    } else {
+        params.web_storage = 'cookies';
+    }
 
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
@@ -937,6 +951,7 @@ module.exports = {
   }
 
 };
+
 },{"./helpers/uri":6,"./terms":11}],11:[function(_dereq_,module,exports){
 "use strict";
 
