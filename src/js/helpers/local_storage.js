@@ -1,6 +1,7 @@
 "use strict";
 
 var default_cookies = require('./cookies');
+var local_storage_session_length = 0;
 
 module.exports = Object.assign({}, default_cookies, {
 
@@ -13,7 +14,7 @@ module.exports = Object.assign({}, default_cookies, {
     // as well as the time when it's supposed to expire
     var item = {
       value: this.encodeData( value ),
-      expiry: (new Date()).getTime() + ( minutes * 60 * 1000 ),
+      expiry: (new Date()).getTime() + ( Math.max( minutes, local_storage_session_length ) * 60 * 1000 ),
     };
     localStorage.setItem(name, JSON.stringify(item));
   },
@@ -45,4 +46,7 @@ module.exports = Object.assign({}, default_cookies, {
     localStorage.removeItem(name);
   },
 
+  setSessionLength: function( session_length ) {
+    local_storage_session_length = session_length;
+  },
 });

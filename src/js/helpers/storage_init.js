@@ -10,7 +10,7 @@ module.exports = {
 		var valid_values = ['cookies', 'singleCookie', 'localStorage', 'sessionStorage'];
 		return valid_values.indexOf( storage_type ) > -1 ? storage_type : valid_values[0];
 	},
-	set: function( storage_type ) {
+	set: function( storage_type, session_length ) {
 		storage_type = this.validateType( storage_type );
 		switch ( storage_type ) {
 			case 'singleCookie':
@@ -18,6 +18,7 @@ module.exports = {
 				break;
 			case 'localStorage':
 				storage_module = local_storage;
+				storage_module.setSessionLength( session_length );
 				break;
 			case 'sessionStorage':
 				storage_module = session_storage;

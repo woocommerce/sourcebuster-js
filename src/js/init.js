@@ -18,7 +18,7 @@ module.exports = function(prefs) {
       lifetime  = p.lifetime;
 
   // Select web storage method
-  storage_init.set(p.web_storage);
+  storage_init.set(p.web_storage, p.session_length);
   web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);

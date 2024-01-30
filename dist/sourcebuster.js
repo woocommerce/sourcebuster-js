@@ -217,6 +217,7 @@ module.exports = {
 "use strict";
 
 var default_cookies = _dereq_('./cookies');
+var local_storage_session_length = 0;
 
 module.exports = Object.assign({}, default_cookies, {
 
@@ -229,7 +230,7 @@ module.exports = Object.assign({}, default_cookies, {
     // as well as the time when it's supposed to expire
     var item = {
       value: this.encodeData( value ),
-      expiry: (new Date()).getTime() + ( minutes * 60 * 1000 ),
+      expiry: (new Date()).getTime() + ( Math.max( minutes, local_storage_session_length ) * 60 * 1000 ),
     };
     localStorage.setItem(name, JSON.stringify(item));
   },
@@ -261,6 +262,9 @@ module.exports = Object.assign({}, default_cookies, {
     localStorage.removeItem(name);
   },
 
+  setSessionLength: function( session_length ) {
+    local_storage_session_length = session_length;
+  },
 });
 
 },{"./cookies":2}],4:[function(_dereq_,module,exports){
@@ -392,7 +396,7 @@ module.exports = {
 		var valid_values = ['cookies', 'singleCookie', 'localStorage', 'sessionStorage'];
 		return valid_values.indexOf( storage_type ) > -1 ? storage_type : valid_values[0];
 	},
-	set: function( storage_type ) {
+	set: function( storage_type, session_length ) {
 		storage_type = this.validateType( storage_type );
 		switch ( storage_type ) {
 			case 'singleCookie':
@@ -400,6 +404,7 @@ module.exports = {
 				break;
 			case 'localStorage':
 				storage_module = local_storage;
+				storage_module.setSessionLength( session_length );
 				break;
 			case 'sessionStorage':
 				storage_module = session_storage;
@@ -531,7 +536,7 @@ module.exports = function(prefs) {
       lifetime  = p.lifetime;
 
   // Select web storage method
-  storage_init.set(p.web_storage);
+  storage_init.set(p.web_storage, p.session_length);
   web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);
