@@ -20,6 +20,9 @@ module.exports = {
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
 
+    // Enable `base64 encoding`
+    params.base64 = user.base64 || false;
+
     // Set `campaign param` for AdWords links
     params.campaign_param = user.campaign_param || false;
 
