@@ -96,6 +96,7 @@ sbjs.init({
 There are 11 types of user settings:
 * lifetime
 * session_length
+* base64
 * domain
 * referrals
 * organics
@@ -118,6 +119,10 @@ sbjs.init({
   // Set custom session length in minutes
   // 30 minutes is default
   session_length: 30,
+  
+  // Enable base64 encoding for cookie data
+  // disabled by default
+  params.base64 = true,
 
   // Set domain name in cookies
   domain: {
