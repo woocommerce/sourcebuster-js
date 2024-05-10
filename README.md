@@ -206,7 +206,14 @@ The rules are the same with Google Analytics:
 
 Explanation to `referral` logic: sometimes visitor within the current visit (session) comes to the website from the “source” which is not actually a “source”. For example, it can be visit from the email service, where he had a registration activation link.
 
-#### Domain
+#### base64
+
+```javascript
+base64: true
+```
+Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling base64 encoding for cookie data. This is disabled by default.
+
+#### domain
 
 ```javascript
 domain: {
