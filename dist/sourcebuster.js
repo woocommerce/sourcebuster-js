@@ -131,6 +131,12 @@ var delimiter = _dereq_('../data').delimiter;
 
 module.exports = {
 
+  useBase64: false, // Base64 flag set to false by default
+
+  setBase64Flag: function(value) {
+    this.useBase64 = value;
+  },
+
   encodeData: function(s) {
     return encodeURIComponent(s).replace(/\!/g, '%21')
                                 .replace(/\~/g, '%7E')
@@ -169,7 +175,12 @@ module.exports = {
     } else {
       basehost = '';
     }
-    document.cookie = this.encodeData(name) + '=' + this.encodeData(value) + expires + basehost + '; path=/';
+    var cookie_content = this.encodeData(value);
+    if (this.useBase64) {
+        // Base64 encoding and removing equal sign padding
+        cookie_content = btoa(cookie_content).replace(/=+$/, '');
+    }
+    document.cookie = this.encodeData(name) + '=' + cookie_content + expires + basehost + '; path=/';
   },
 
   get: function(name) {
@@ -180,7 +191,14 @@ module.exports = {
       var c = ca[i];
       while (c.charAt(0) === ' ') { c = c.substring(1, c.length); }
       if (c.indexOf(nameEQ) === 0) {
-        return this.decodeData(c.substring(nameEQ.length, c.length));
+        var cookie_content = c.substring(nameEQ.length, c.length);
+        // Decode the content if it is only base64-valid characters
+        // Non-base64 characters indicate that the cookie is in the old format
+        if (/^[A-Za-z0-9+/]+$/.test(cookie_content)) {
+            // Base64 decoding after adding equal sign padding if necessary
+            cookie_content = atob(cookie_content.padEnd(cookie_content.length + (4 - cookie_content.length % 4) % 4, '='));
+        }
+        return this.decodeData(cookie_content);
       }
     }
     return null;
@@ -345,6 +363,8 @@ module.exports = function(prefs) {
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
+
+  cookies.setBase64Flag( p.base64 );
 
   migrations.go(lifetime, domain, isolate);
 
@@ -783,6 +803,9 @@ module.exports = {
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
 
+    // Enable `base64 encoding`
+    params.base64 = user.base64 || false;
+
     // Set `campaign param` for AdWords links
     params.campaign_param = user.campaign_param || false;
 
@@ -881,6 +904,7 @@ module.exports = {
   }
 
 };
+
 },{"./helpers/uri":4,"./terms":9}],9:[function(_dereq_,module,exports){
 "use strict";
 
