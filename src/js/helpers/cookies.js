@@ -65,7 +65,9 @@ module.exports = {
       while (c.charAt(0) === ' ') { c = c.substring(1, c.length); }
       if (c.indexOf(nameEQ) === 0) {
         var cookie_content = c.substring(nameEQ.length, c.length);
-        if (this.useBase64) {
+        // Decode the content if it is only base64-valid characters
+        // Non-base64 characters indicate that the cookie is in the old format
+        if (/^[A-Za-z0-9+/]+$/.test(cookie_content)) {
             // Base64 decoding after adding equal sign padding if necessary
             cookie_content = atob(cookie_content.padEnd(cookie_content.length + (4 - cookie_content.length % 4) % 4, '='));
         }
