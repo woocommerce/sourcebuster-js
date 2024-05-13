@@ -68,8 +68,14 @@ module.exports = {
         // Decode the content if it is only base64-valid characters
         // Non-base64 characters indicate that the cookie is in the old format
         if (/^[A-Za-z0-9+/]+$/.test(cookie_content)) {
-            // Base64 decoding after adding equal sign padding if necessary
-            cookie_content = atob(cookie_content.padEnd(cookie_content.length + (4 - cookie_content.length % 4) % 4, '='));
+          try {
+            // Ensure the Base64 string has the correct padding (always multiples of 4)
+            cookie_content = cookie_content.padEnd(cookie_content.length + (4 - cookie_content.length % 4) % 4, '=');
+            // Decode the potentially padded Base64 string
+            cookie_content = atob(cookie_content);
+          } catch (error) {
+            // If the Base64 string is invalid, just keep the cookie content as is
+          }
         }
         return this.decodeData(cookie_content);
       }
