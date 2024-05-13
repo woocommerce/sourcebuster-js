@@ -122,7 +122,7 @@ sbjs.init({
   
   // Enable base64 encoding for cookie data
   // disabled by default
-  params.base64 = true,
+  base64: true,
 
   // Set domain name in cookies
   domain: {
