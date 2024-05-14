@@ -2,11 +2,12 @@
 
 var data        = require('./data'),
     terms       = require('./terms'),
-    cookies     = require('./helpers/cookies'),
     uri         = require('./helpers/uri'),
     utils       = require('./helpers/utils'),
     params      = require('./params'),
-    migrations  = require('./migrations');
+    migrations  = require('./migrations'),
+    web_storage = require('./helpers/cookies'),
+    storage_init = require('./helpers/storage_init');
 
 module.exports = function(prefs) {
 
@@ -15,6 +16,10 @@ module.exports = function(prefs) {
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
+
+  // Select web storage method
+  storage_init.set(p.web_storage, p.session_length);
+  web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);
 
@@ -46,14 +51,14 @@ module.exports = function(prefs) {
     } else if (checkReferer(terms.traffic.organic)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.organic);
-    } else if (!cookies.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
+    } else if (!web_storage.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.referral);
-    } else if (!cookies.get(data.containers.first) && !cookies.get(data.containers.current)) {
+    } else if (!web_storage.get(data.containers.first) && !web_storage.get(data.containers.current)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.typein);
     } else {
-      return cookies.get(data.containers.current);
+      return web_storage.get(data.containers.current);
     }
 
     return sbjs_data;
@@ -270,49 +275,53 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    web_storage.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first_extra)) {
+      web_storage.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
     }
   }
 
   (function setData() {
 
     // Main data
-    cookies.set(data.containers.current, mainData(), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first)) {
-      cookies.set(data.containers.first, cookies.get(data.containers.current), lifetime, domain, isolate);
+    web_storage.set(data.containers.current, mainData(), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first)) {
+      web_storage.set(data.containers.first, web_storage.get(data.containers.current), lifetime, domain, isolate);
     }
 
     // User data
     var visits, udata;
-    if (!cookies.get(data.containers.udata)) {
+    if (!web_storage.get(data.containers.udata)) {
       visits  = 1;
       udata   = data.pack.user(visits, p.user_ip);
     } else {
-      visits  = parseInt(cookies.parse(data.containers.udata)[cookies.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
-      visits  = cookies.get(data.containers.session) ? visits : visits + 1;
+      visits  = parseInt(web_storage.parse(data.containers.udata)[web_storage.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
+      visits  = web_storage.get(data.containers.session) ? visits : visits + 1;
       udata   = data.pack.user(visits, p.user_ip);
     }
-    cookies.set(data.containers.udata, udata, lifetime, domain, isolate);
+    web_storage.set(data.containers.udata, udata, lifetime, domain, isolate);
 
     // Session
     var pages_count;
-    if (!cookies.get(data.containers.session)) {
+    if (!web_storage.get(data.containers.session)) {
       pages_count = 1;
     } else {
-      pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
+      pages_count = parseInt(web_storage.parse(data.containers.session)[web_storage.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    web_storage.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
 
     // Promocode
-    if (p.promocode && !cookies.get(data.containers.promocode)) {
-      cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    if (p.promocode && !web_storage.get(data.containers.promocode)) {
+      web_storage.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    }
+
+    if ( web_storage.save ) {
+      web_storage.save( lifetime, domain, isolate );
     }
 
   })();
 
-  return cookies.parse(data.containers);
+  return web_storage.parse(data.containers);
 
 };

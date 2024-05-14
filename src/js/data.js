@@ -12,7 +12,8 @@ var data = {
     first_extra:      'sbjs_first_add',
     session:          'sbjs_session',
     udata:            'sbjs_udata',
-    promocode:        'sbjs_promo'
+    promocode:        'sbjs_promo',
+    single:           'sbjs_current',
   },
 
   service: {
@@ -50,7 +51,9 @@ var data = {
       agent:          'uag'
     },
 
-    promo:            'code'
+    promo:            'code',
+
+    single_expire:    'sxp'
 
   },
 

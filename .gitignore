@@ -8,5 +8,6 @@
 .idea
 .ruby-version
 .ruby-gemset
+.ddev
 node_modules
 bower_components

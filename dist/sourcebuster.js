@@ -1,19 +1,4 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.sbjs=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
-"use strict";
-
-var init = _dereq_('./init');
-
-var sbjs = {
-  init: function(prefs) {
-    this.get = init(prefs);
-    if (prefs && prefs.callback && typeof prefs.callback === 'function') {
-      prefs.callback(this.get);
-    }
-  }
-};
-
-module.exports = sbjs;
-},{"./init":6}],2:[function(_dereq_,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.sbjs = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -28,7 +13,8 @@ var data = {
     first_extra:      'sbjs_first_add',
     session:          'sbjs_session',
     udata:            'sbjs_udata',
-    promocode:        'sbjs_promo'
+    promocode:        'sbjs_promo',
+    single:           'sbjs_current',
   },
 
   service: {
@@ -66,7 +52,9 @@ var data = {
       agent:          'uag'
     },
 
-    promo:            'code'
+    promo:            'code',
+
+    single_expire:    'sxp'
 
   },
 
@@ -118,7 +106,7 @@ var data = {
 
 module.exports = data;
 
-},{"./helpers/utils":5,"./terms":9}],3:[function(_dereq_,module,exports){
+},{"./helpers/utils":8,"./terms":13}],2:[function(_dereq_,module,exports){
 "use strict";
 
 var delimiter = _dereq_('../data').delimiter;
@@ -225,7 +213,213 @@ module.exports = {
 
 };
 
-},{"../data":2}],4:[function(_dereq_,module,exports){
+},{"../data":1}],3:[function(_dereq_,module,exports){
+"use strict";
+
+var default_cookies = _dereq_('./cookies');
+var local_storage_session_length = 0;
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    // `item` is an object which contains the original value
+    // as well as the time when it's supposed to expire
+    var item = {
+      value: this.encodeData( value ),
+      expiry: (new Date()).getTime() + ( Math.max( minutes, local_storage_session_length ) * 60 * 1000 ),
+    };
+    localStorage.setItem(name, JSON.stringify(item));
+  },
+
+  get: function(name) {
+    var item_raw = localStorage.getItem(name);
+    // if the item doesn't exist, return null
+    if (!item_raw) {
+      return null;
+    }
+
+    var item_str = JSON.parse(item_raw);
+    // compare the expiry time of the item with the current time
+    if ((new Date()).getTime() > item_str.expiry) {
+      // If the item is expired, delete the item from storage
+      // and return null
+      localStorage.removeItem(name);
+      return null;
+    }
+
+    return this.decodeData( item_str.value );
+  },
+
+  destroy: function(name, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    localStorage.removeItem(name);
+  },
+
+  setSessionLength: function( session_length ) {
+    local_storage_session_length = session_length;
+  },
+});
+
+},{"./cookies":2}],4:[function(_dereq_,module,exports){
+"use strict";
+
+var default_cookies = _dereq_('./cookies');
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    // Don't break the build
+    excl_subdomains = minutes + domain + excl_subdomains;
+    sessionStorage.setItem(this.encodeData(name), value);
+  },
+
+  get: function(name) {
+    return sessionStorage.getItem(this.encodeData(name));
+  },
+
+  destroy: function(name, domain, excl_subdomains) {
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    localStorage.removeItem(name);
+  },
+
+});
+
+},{"./cookies":2}],5:[function(_dereq_,module,exports){
+"use strict";
+
+var single_cookie = null;
+var data = _dereq_('../data'),
+    default_cookies = _dereq_('./cookies');
+
+module.exports = Object.assign({}, default_cookies, {
+
+  set: function(name, value, minutes, domain, excl_subdomains) {
+    if( ! single_cookie ) {
+      this.load();
+    }
+    // Don't break the build
+    domain = '';
+    excl_subdomains = false;
+
+    // Set an expiration for the values
+    if( name === data.containers.session ) {
+      value += data.delimiter + data.aliases.single_expire + '=' + (Math.floor(Date.now() / 1000) + minutes * 60);
+    }
+    single_cookie[default_cookies.unsbjs(name)] = value;
+  },
+
+  get: function(name) {
+    if( ! single_cookie ) {
+      this.load();
+    }
+
+    // Simulate checking session expiration
+    if( name === data.containers.session ) {
+      var session = single_cookie[default_cookies.unsbjs(name)];
+      if( session ) {
+        var sts = session.match(/sts=(\d+)/);
+        if( sts && Math.floor(Date.now() / 1000) > parseInt(sts[1]) ) {
+          delete single_cookie[default_cookies.unsbjs(name)];
+          return null;
+        }
+      }
+    }
+    return single_cookie[default_cookies.unsbjs(name)] || default_cookies.get(name);
+  },
+
+  load: function() {
+    var retrieved_cookie = default_cookies.get(data.containers.single);
+    if( ! retrieved_cookie ) {
+      single_cookie = {};
+      return;
+    }
+    try {
+      single_cookie = JSON.parse(retrieved_cookie);
+    } catch (error) {
+      single_cookie = {};
+    }
+  },
+
+  save: function( lifetime, domain, isolate ) {
+    default_cookies.set(data.containers.single, JSON.stringify(single_cookie), lifetime, domain, isolate);
+  },
+
+  deleteOld: function( domain, isolate ) {
+    var deleted_old = single_cookie['do'] !== undefined;
+    single_cookie['do'] = 1;
+
+    if( ! deleted_old ) {
+      var old_cookies = Object.keys(data.containers).map(function (key) {
+        return data.containers[key];
+      });
+      for (var prop in data.service) {
+        if (data.service.hasOwnProperty(prop)) {
+          old_cookies.push(data.service[prop]);
+        }
+      }
+
+      // Delete all instances of data.containers.single in old_cookies
+      var val_remove = data.containers.single;
+      var index = old_cookies.indexOf(val_remove);
+      while (index !== -1) {
+        old_cookies.splice(index, 1);
+        index = old_cookies.indexOf(val_remove);
+      }
+      for (var i = 0; i < old_cookies.length; i++) {
+        default_cookies.set(old_cookies[i], '', -1, domain, isolate);
+      }
+    }
+
+  }
+});
+
+},{"../data":1,"./cookies":2}],6:[function(_dereq_,module,exports){
+var storage_module = null;
+var local_storage = _dereq_('./local_storage'),
+	session_storage = _dereq_('./session_storage'),
+	single_cookie = _dereq_('./single_cookie'),
+	cookies       = _dereq_('./cookies');
+
+module.exports = {
+	validateType: function( storage_type ) {
+		// Default to valid_values[0] if storage_type is not in valid_values
+		var valid_values = ['cookies', 'singleCookie', 'localStorage', 'sessionStorage'];
+		return valid_values.indexOf( storage_type ) > -1 ? storage_type : valid_values[0];
+	},
+	set: function( storage_type, session_length ) {
+		storage_type = this.validateType( storage_type );
+		switch ( storage_type ) {
+			case 'singleCookie':
+				storage_module = single_cookie;
+				break;
+			case 'localStorage':
+				storage_module = local_storage;
+				storage_module.setSessionLength( session_length );
+				break;
+			case 'sessionStorage':
+				storage_module = session_storage;
+				break;
+			case 'cookies':
+			default:
+				storage_module = cookies;
+		}
+	},
+	get: function() {
+		return storage_module;
+	}
+};
+
+},{"./cookies":2,"./local_storage":3,"./session_storage":4,"./single_cookie":5}],7:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -283,7 +477,7 @@ module.exports = {
   }
 
 };
-},{}],5:[function(_dereq_,module,exports){
+},{}],8:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -321,16 +515,17 @@ module.exports = {
 
 };
 
-},{}],6:[function(_dereq_,module,exports){
+},{}],9:[function(_dereq_,module,exports){
 "use strict";
 
 var data        = _dereq_('./data'),
     terms       = _dereq_('./terms'),
-    cookies     = _dereq_('./helpers/cookies'),
     uri         = _dereq_('./helpers/uri'),
     utils       = _dereq_('./helpers/utils'),
     params      = _dereq_('./params'),
-    migrations  = _dereq_('./migrations');
+    migrations  = _dereq_('./migrations'),
+    web_storage = _dereq_('./helpers/cookies'),
+    storage_init = _dereq_('./helpers/storage_init');
 
 module.exports = function(prefs) {
 
@@ -339,6 +534,10 @@ module.exports = function(prefs) {
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
+
+  // Select web storage method
+  storage_init.set(p.web_storage, p.session_length);
+  web_storage = storage_init.get();
 
   migrations.go(lifetime, domain, isolate);
 
@@ -370,14 +569,14 @@ module.exports = function(prefs) {
     } else if (checkReferer(terms.traffic.organic)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.organic);
-    } else if (!cookies.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
+    } else if (!web_storage.get(data.containers.session) && checkReferer(terms.traffic.referral)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.referral);
-    } else if (!cookies.get(data.containers.first) && !cookies.get(data.containers.current)) {
+    } else if (!web_storage.get(data.containers.first) && !web_storage.get(data.containers.current)) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.typein);
     } else {
-      return cookies.get(data.containers.current);
+      return web_storage.get(data.containers.current);
     }
 
     return sbjs_data;
@@ -594,69 +793,74 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    web_storage.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first_extra)) {
+      web_storage.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
     }
   }
 
   (function setData() {
 
     // Main data
-    cookies.set(data.containers.current, mainData(), lifetime, domain, isolate);
-    if (!cookies.get(data.containers.first)) {
-      cookies.set(data.containers.first, cookies.get(data.containers.current), lifetime, domain, isolate);
+    web_storage.set(data.containers.current, mainData(), lifetime, domain, isolate);
+    if (!web_storage.get(data.containers.first)) {
+      web_storage.set(data.containers.first, web_storage.get(data.containers.current), lifetime, domain, isolate);
     }
 
     // User data
     var visits, udata;
-    if (!cookies.get(data.containers.udata)) {
+    if (!web_storage.get(data.containers.udata)) {
       visits  = 1;
       udata   = data.pack.user(visits, p.user_ip);
     } else {
-      visits  = parseInt(cookies.parse(data.containers.udata)[cookies.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
-      visits  = cookies.get(data.containers.session) ? visits : visits + 1;
+      visits  = parseInt(web_storage.parse(data.containers.udata)[web_storage.unsbjs(data.containers.udata)][data.aliases.udata.visits]) || 1;
+      visits  = web_storage.get(data.containers.session) ? visits : visits + 1;
       udata   = data.pack.user(visits, p.user_ip);
     }
-    cookies.set(data.containers.udata, udata, lifetime, domain, isolate);
+    web_storage.set(data.containers.udata, udata, lifetime, domain, isolate);
 
     // Session
     var pages_count;
-    if (!cookies.get(data.containers.session)) {
+    if (!web_storage.get(data.containers.session)) {
       pages_count = 1;
     } else {
-      pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
+      pages_count = parseInt(web_storage.parse(data.containers.session)[web_storage.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    web_storage.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
 
     // Promocode
-    if (p.promocode && !cookies.get(data.containers.promocode)) {
-      cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    if (p.promocode && !web_storage.get(data.containers.promocode)) {
+      web_storage.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+    }
+
+    if ( web_storage.save ) {
+      web_storage.save( lifetime, domain, isolate );
     }
 
   })();
 
-  return cookies.parse(data.containers);
+  return web_storage.parse(data.containers);
 
 };
 
-},{"./data":2,"./helpers/cookies":3,"./helpers/uri":4,"./helpers/utils":5,"./migrations":7,"./params":8,"./terms":9}],7:[function(_dereq_,module,exports){
+},{"./data":1,"./helpers/cookies":2,"./helpers/storage_init":6,"./helpers/uri":7,"./helpers/utils":8,"./migrations":10,"./params":11,"./terms":13}],10:[function(_dereq_,module,exports){
 "use strict";
 
 var data    = _dereq_('./data'),
-    cookies = _dereq_('./helpers/cookies');
+    storage_init = _dereq_('./helpers/storage_init');
 
 module.exports = {
 
   go: function(lifetime, domain, isolate) {
 
+    var web_storage = storage_init.get();
     var migrate = this.migrations,
         _with   = { l: lifetime, d: domain, i: isolate };
 
     var i;
 
-    if (!cookies.get(data.containers.first) && !cookies.get(data.service.migrations)) {
+    if (!web_storage.get(data.containers.first) && !web_storage.get(data.service.migrations)) {
 
       var mids = [];
       for (i = 0; i < migrate.length; i++) { mids.push(migrate[i].id); }
@@ -666,9 +870,9 @@ module.exports = {
         advance += mids[i] + '=1';
         if (i < mids.length - 1) { advance += data.delimiter; }
       }
-      cookies.set(data.service.migrations, advance, _with.l, _with.d, _with.i);
+      web_storage.set(data.service.migrations, advance, _with.l, _with.d, _with.i);
 
-    } else if (!cookies.get(data.service.migrations)) {
+    } else if (!web_storage.get(data.service.migrations)) {
 
       // We have only one migration for now, so just
       for (i = 0; i < migrate.length; i++) {
@@ -685,6 +889,8 @@ module.exports = {
       id: '1418474375998',
       version: '1.0.0-beta',
       go: function(mid, _with) {
+
+        var web_storage = storage_init.get();
 
         var success = mid + '=1',
             fail    = mid + '=0';
@@ -704,25 +910,25 @@ module.exports = {
           }
 
           for (var i = 0; i < _in.length; i++) {
-            if (cookies.get(_in[i])) {
-              var buffer = cookies.get(_in[i]).replace(/(\|)?\|(\|)?/g, safeReplace);
-              cookies.destroy(_in[i], _with.d, _with.i);
-              cookies.destroy(_in[i], _with.d, !_with.i);
-              cookies.set(_in[i], buffer, _with.l, _with.d, _with.i);
+            if (web_storage.get(_in[i])) {
+              var buffer = web_storage.get(_in[i]).replace(/(\|)?\|(\|)?/g, safeReplace);
+              web_storage.destroy(_in[i], _with.d, _with.i);
+              web_storage.destroy(_in[i], _with.d, !_with.i);
+              web_storage.set(_in[i], buffer, _with.l, _with.d, _with.i);
             }
           }
 
           // Update `session`
-          if (cookies.get(data.containers.session)) {
-            cookies.set(data.containers.session, data.pack.session(0), _with.l, _with.d, _with.i);
+          if (web_storage.get(data.containers.session)) {
+            web_storage.set(data.containers.session, data.pack.session(0), _with.l, _with.d, _with.i);
           }
 
           // Yay!
-          cookies.set(data.service.migrations, success, _with.l, _with.d, _with.i);
+          web_storage.set(data.service.migrations, success, _with.l, _with.d, _with.i);
 
         } catch (err) {
           // Oops
-          cookies.set(data.service.migrations, fail, _with.l, _with.d, _with.i);
+          web_storage.set(data.service.migrations, fail, _with.l, _with.d, _with.i);
         }
       }
     }
@@ -730,7 +936,8 @@ module.exports = {
   ]
 
 };
-},{"./data":2,"./helpers/cookies":3}],8:[function(_dereq_,module,exports){
+
+},{"./data":1,"./helpers/storage_init":6}],11:[function(_dereq_,module,exports){
 "use strict";
 
 var terms = _dereq_('./terms'),
@@ -749,6 +956,13 @@ module.exports = {
 
     // Set `session length` in minutes
     params.session_length = this.validate.checkInt(user.session_length) || 30;
+
+    // Set `web storage` method
+    if ( user.web_storage && this.validate.isString(user.web_storage) ) {
+        params.web_storage = user.web_storage;
+    } else {
+        params.web_storage = 'cookies';
+    }
 
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
@@ -851,7 +1065,23 @@ module.exports = {
   }
 
 };
-},{"./helpers/uri":4,"./terms":9}],9:[function(_dereq_,module,exports){
+
+},{"./helpers/uri":7,"./terms":13}],12:[function(_dereq_,module,exports){
+"use strict";
+
+var init = _dereq_('./init');
+
+var sbjs = {
+  init: function(prefs) {
+    this.get = init(prefs);
+    if (prefs && prefs.callback && typeof prefs.callback === 'function') {
+      prefs.callback(this.get);
+    }
+  }
+};
+
+module.exports = sbjs;
+},{"./init":9}],13:[function(_dereq_,module,exports){
 "use strict";
 
 module.exports = {
@@ -874,5 +1104,5 @@ module.exports = {
 
 };
 
-},{}]},{},[1])(1)
+},{}]},{},[12])(12)
 });

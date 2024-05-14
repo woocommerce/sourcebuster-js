@@ -93,9 +93,10 @@ sbjs.init({
 });
 ```
 
-There are 11 types of user settings:
+There are 12 types of user settings:
 * lifetime
 * session_length
+* web_storage
 * domain
 * referrals
 * organics
@@ -118,6 +119,10 @@ sbjs.init({
   // Set custom session length in minutes
   // 30 minutes is default
   session_length: 30,
+  
+  // Set the web storage method
+  // 'cookies' is default
+  web_storage: 'cookies',
 
   // Set domain name in cookies
   domain: {
@@ -200,6 +205,19 @@ The rules are the same with Google Analytics:
 * Referral source overrides previous source only if there is no user session at the moment. If it’s inside the same session — a referral source will never override previous source.
 
 Explanation to `referral` logic: sometimes visitor within the current visit (session) comes to the website from the “source” which is not actually a “source”. For example, it can be visit from the email service, where he had a registration activation link.
+#### web_storage
+``` javascript
+web_storage: 'cookies'
+```
+See [PR 3](https://github.com/woocommerce/sourcebuster-js/pull/3) for more details.
+
+Basically, configure where the Sourcebuster data will be stored and manipulated:
+- `cookies` (default) — in multiple cookies
+- `singleCookie` — in a single, JSON-encoded cookie
+- `localStorage` — in browser `local storage`
+- `sessionStorage` — in browser `session storage`
+
+Any other value (or no value) will default to `cookies`.
 
 #### Domain
 
