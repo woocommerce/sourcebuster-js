@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <link href="https://sbjs.rocks/favicon.ico" rel="icon" type="image/x-icon" />
     <title>Sourcebuster JS &trade;</title><!--[if lt IE 9]>
     <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -16,7 +17,7 @@
         </h1>
       </header>
       <section id="src-links">
-        <a href="https://github.com/woocommerce/sourcebuster-js" target="_blank">GitHub</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="https://github.com/woocommerce/sourcebuster-js/archive/master.zip">Download from GitHub</a>
+        <a href=".">Demo</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="https://github.com/woocommerce/sourcebuster-js" target="_blank">GitHub</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="https://github.com/woocommerce/sourcebuster-js/archive/master.zip">Download from GitHub</a>
       </section>
       <table>
         <tr>
@@ -76,6 +77,24 @@
                 </td>
                 <td class="sb-table-param-value" id="sb_first_id"></td>
               </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_source_platform:
+                </td>
+                <td class="sb-table-param-value" id="sb_first_plt"></td>
+              </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_creative_format:
+                </td>
+                <td class="sb-table-param-value" id="sb_first_fmt"></td>
+              </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_marketing_tactic:
+                </td>
+                <td class="sb-table-param-value" id="sb_first_tct"></td>
+              </tr>
             </table>
           </td>
           <td>
@@ -121,6 +140,24 @@
                   utm_id:
                 </td>
                 <td class="sb-table-param-value" id="sb_current_id"></td>
+              </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_source_platform:
+                </td>
+                <td class="sb-table-param-value" id="sb_current_plt"></td>
+              </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_creative_format:
+                </td>
+                <td class="sb-table-param-value" id="sb_current_fmt"></td>
+              </tr>
+              <tr>
+                <td class="sb-table-param-type">
+                  utm_marketing_tactic:
+                </td>
+                <td class="sb-table-param-value" id="sb_current_tct"></td>
               </tr>
             </table>
           </td>
@@ -228,6 +265,9 @@
           document.getElementById('sb_first_cnt').innerHTML       = sb.first.cnt;
           document.getElementById('sb_first_trm').innerHTML       = sb.first.trm;
           document.getElementById('sb_first_id').innerHTML        = sb.first.id;
+          document.getElementById('sb_first_plt').innerHTML       = sb.first.plt;
+          document.getElementById('sb_first_fmt').innerHTML       = sb.first.fmt;
+          document.getElementById('sb_first_tct').innerHTML       = sb.first.tct;
         
           document.getElementById('sb_current_typ').innerHTML     = sb.current.typ;
           document.getElementById('sb_current_src').innerHTML     = sb.current.src;
@@ -236,6 +276,9 @@
           document.getElementById('sb_current_cnt').innerHTML     = sb.current.cnt;
           document.getElementById('sb_current_trm').innerHTML     = sb.current.trm;
           document.getElementById('sb_current_id').innerHTML      = sb.current.id;
+          document.getElementById('sb_current_plt').innerHTML     = sb.current.plt;
+          document.getElementById('sb_current_fmt').innerHTML     = sb.current.fmt;
+          document.getElementById('sb_current_tct').innerHTML     = sb.current.tct;
         
           document.getElementById('sb_first_add_fd').innerHTML    = sb.first_add.fd;
           document.getElementById('sb_first_add_ep').innerHTML    = sb.first_add.ep;
@@ -263,7 +306,7 @@
           UTM
         </h3>
         <p>
-          <a href="?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=g_test_sourcebuster_js&amp;utm_term=sourcebuster_js_google_keyword o simplemente una clave de google&amp;utm_id=20110927">?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...</a><br /><a href="?utm_source=yandex&amp;utm_medium=cpc&amp;utm_campaign=y_test_sourcebuster_js&amp;utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса&amp;utm_id=20110927">?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...</a>
+          <a href="?utm_source=google&amp;utm_medium=cpc&amp;utm_campaign=g_test_sourcebuster_js&amp;utm_term=sourcebuster_js_google_keyword o simplemente una clave de google&amp;utm_content=ad1&amp;utm_id=20110927&amp;utm_source_platform=gads&amp;utm_creative_format=img&amp;utm_marketing_tactic=rkt">?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...</a><br /><a href="?utm_source=yandex&amp;utm_medium=cpc&amp;utm_campaign=y_test_sourcebuster_js&amp;utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса&amp;utm_content=ad2&amp;utm_id=20110927&amp;utm_source_platform=mnl&amp;utm_creative_format=vid&amp;utm_marketing_tactic=onb">?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...</a>
         </p>
       </section>
     </section>
