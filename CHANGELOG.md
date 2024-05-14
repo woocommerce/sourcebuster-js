@@ -1,3 +1,19 @@
+
+## 1.1.2
+Features:
+- Add `utm_id` parameter handling
+
+Changes:
+- Forked from the original repo (`alex35mil/sourcebuster-js`)
+
+General updates: 
+  - Add `.nvmrc` with `lts/iron` (v20)
+  - Use `dart-sass` instead of `node-sass`
+  - Update dependencies to work with Node 20
+Features:
+- Add `utm_id` parameter handling
+
+
 ## 1.0.5
 
 Features:
