@@ -1,5 +1,5 @@
-
 ## 1.1.2
+
 Features:
 - Add `utm_id` parameter handling
 
@@ -12,6 +12,7 @@ General updates:
   - Update dependencies to work with Node 20
 
 ## 1.1.0
+
 Features:
 - Yandex click ID handling (`yclid`)
 
