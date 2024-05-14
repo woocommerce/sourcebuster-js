@@ -10,9 +10,16 @@ General updates:
   - Add `.nvmrc` with `lts/iron` (v20)
   - Use `dart-sass` instead of `node-sass`
   - Update dependencies to work with Node 20
-Features:
-- Add `utm_id` parameter handling
 
+## 1.1.0
+Features:
+- Yandex click ID handling (`yclid`)
+
+Fixes:
+- Avoid `-0` custom UTC offset value
+
+Changes:
+- Update dependencies
 
 ## 1.0.5
 
