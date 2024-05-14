@@ -1,3 +1,25 @@
+## 1.1.2
+
+Features:
+- Add `utm_id` parameter handling
+
+Changes:
+- Fork from the original repo (`alex35mil/sourcebuster-js`)
+- Add `.nvmrc` with `lts/iron` (v20)
+- Use `dart-sass` instead of `node-sass`
+- Update dependencies to work with Node 20
+
+## 1.1.0
+
+Features:
+- Add Yandex click ID handling (`yclid`)
+
+Fixes:
+- Avoid `-0` custom UTC offset value
+
+Changes:
+- Update dependencies
+
 ## 1.0.5
 
 Features:
