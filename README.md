@@ -96,6 +96,7 @@ sbjs.init({
 There are 11 types of user settings:
 * lifetime
 * session_length
+* base64
 * domain
 * referrals
 * organics
@@ -118,6 +119,10 @@ sbjs.init({
   // Set custom session length in minutes
   // 30 minutes is default
   session_length: 30,
+  
+  // Enable Base64 encoding for cookie data
+  // disabled by default
+  base64: true,
 
   // Set domain name in cookies
   domain: {
@@ -201,7 +206,14 @@ The rules are the same with Google Analytics:
 
 Explanation to `referral` logic: sometimes visitor within the current visit (session) comes to the website from the “source” which is not actually a “source”. For example, it can be visit from the email service, where he had a registration activation link.
 
-#### Domain
+#### base64
+
+```javascript
+base64: true
+```
+Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling Base64 encoding for cookie data. This is disabled by default.
+
+#### domain
 
 ```javascript
 domain: {

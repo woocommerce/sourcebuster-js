@@ -16,6 +16,8 @@ module.exports = function(prefs) {
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime;
 
+  cookies.setBase64Flag( p.base64 );
+
   migrations.go(lifetime, domain, isolate);
 
   var __sbjs_type,
