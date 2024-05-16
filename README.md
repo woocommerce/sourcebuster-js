@@ -120,7 +120,7 @@ sbjs.init({
   // 30 minutes is default
   session_length: 30,
   
-  // Enable base64 encoding for cookie data
+  // Enable Base64 encoding for cookie data
   // disabled by default
   base64: true,
 
@@ -211,7 +211,7 @@ Explanation to `referral` logic: sometimes visitor within the current visit (ses
 ```javascript
 base64: true
 ```
-Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling base64 encoding for cookie data. This is disabled by default.
+Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling Base64 encoding for cookie data. This is disabled by default.
 
 #### domain
 
