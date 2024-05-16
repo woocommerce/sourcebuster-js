@@ -58,11 +58,7 @@ module.exports = {
 
   get: function(name) {
     var nameEQ = this.encodeData(name) + '=',
-        ca = document.cookie.split(';'),
-        padMe = function(string) {
-          // Pad the (Base64) string with equal signs to make its length a multiple of 4
-          return string.padEnd(Math.ceil(string.length / 4) * 4, "=");
-        };
+        ca = document.cookie.split(';');
 
     for (var i = 0; i < ca.length; i++) {
       var c = ca[i];
@@ -73,8 +69,8 @@ module.exports = {
         // Non-alphanumeric characters indicate that the cookie data is not encoded
         if (/^[A-Za-z0-9+/]+$/.test(cookie_content)) {
           try {
-            // Attempt to decode the (potentially padded) Base64 string
-            cookie_content = atob( padMe( cookie_content ) );
+            // Attempt to decode the Base64 string (after padding with = to make it a multiple of 4)
+            cookie_content = atob( cookie_content.padEnd(Math.ceil(cookie_content.length / 4) * 4, "=") );
           } catch (error) {
             // If the Base64 string is invalid, just keep the cookie content as is
           }
