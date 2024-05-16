@@ -65,8 +65,8 @@ module.exports = {
       while (c.charAt(0) === ' ') { c = c.substring(1, c.length); }
       if (c.indexOf(nameEQ) === 0) {
         var cookie_content = c.substring(nameEQ.length, c.length);
-        // Decode the content if it is only base64-valid characters
-        // Non-base64 characters indicate that the cookie is in the old format
+        // Decode the content if it is only Base64-valid characters
+        // Non-Base64 characters indicate that the cookie is in the old format
         if (/^[A-Za-z0-9+/]+$/.test(cookie_content)) {
           try {
             // Ensure the Base64 string has the correct padding (always multiples of 4)
