@@ -30,7 +30,10 @@ var data = {
       campaign:       'cmp',
       content:        'cnt',
       term:           'trm',
-      id:             'id'
+      id:             'id',
+      platform:       'plt',
+      format:         'fmt',
+      tactic:         'tct'
     },
 
     extra: {
@@ -64,7 +67,10 @@ var data = {
         data.aliases.main.campaign  + '=' + sbjs.campaign + data.delimiter +
         data.aliases.main.content   + '=' + sbjs.content  + data.delimiter +
         data.aliases.main.term      + '=' + sbjs.term     + data.delimiter +
-        data.aliases.main.id        + '=' + sbjs.id
+        data.aliases.main.id        + '=' + sbjs.id       + data.delimiter +
+        data.aliases.main.platform  + '=' + sbjs.platform + data.delimiter +
+        data.aliases.main.format    + '=' + sbjs.format   + data.delimiter +
+        data.aliases.main.tactic    + '=' + sbjs.tactic
       );
     },
 

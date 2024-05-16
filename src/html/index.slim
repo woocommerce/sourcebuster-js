@@ -2,6 +2,7 @@ doctype html
 html
   head
     meta [charset="utf-8"]
+    link [rel="icon" type="image/x-icon" href="https://sbjs.rocks/favicon.ico"]
     title Sourcebuster JS &trade;
 
     /[if lt IE 9]
@@ -17,6 +18,8 @@ html
         h1 Sourcebuster JS
 
       section [id="src-links"]
+        a [href="."] Demo
+        |&nbsp;&nbsp;&middot;&nbsp;&nbsp;
         a [href="https://github.com/woocommerce/sourcebuster-js" target="_blank"] GitHub
         | &nbsp;&nbsp;&middot;&nbsp;&nbsp;
         a [href="https://github.com/woocommerce/sourcebuster-js/archive/master.zip"] Download from GitHub
@@ -52,6 +55,15 @@ html
               tr
                 td [class="sb-table-param-type"] utm_id:
                 td [class="sb-table-param-value" id="sb_first_id"]
+              tr
+                td [class="sb-table-param-type"] utm_source_platform:
+                td [class="sb-table-param-value" id="sb_first_plt"]
+              tr
+                td [class="sb-table-param-type"] utm_creative_format:
+                td [class="sb-table-param-value" id="sb_first_fmt"]
+              tr
+                td [class="sb-table-param-type"] utm_marketing_tactic:
+                td [class="sb-table-param-value" id="sb_first_tct"]
           td
             table
               tr
@@ -75,6 +87,15 @@ html
               tr
                 td [class="sb-table-param-type"] utm_id:
                 td [class="sb-table-param-value" id="sb_current_id"]
+              tr
+                td [class="sb-table-param-type"] utm_source_platform:
+                td [class="sb-table-param-value" id="sb_current_plt"]
+              tr
+                td [class="sb-table-param-type"] utm_creative_format:
+                td [class="sb-table-param-value" id="sb_current_fmt"]
+              tr
+                td [class="sb-table-param-type"] utm_marketing_tactic:
+                td [class="sb-table-param-value" id="sb_current_tct"]
 
       table
         tr
@@ -142,6 +163,9 @@ html
           document.getElementById('sb_first_cnt').innerHTML       = sb.first.cnt;
           document.getElementById('sb_first_trm').innerHTML       = sb.first.trm;
           document.getElementById('sb_first_id').innerHTML        = sb.first.id;
+          document.getElementById('sb_first_plt').innerHTML       = sb.first.plt;
+          document.getElementById('sb_first_fmt').innerHTML       = sb.first.fmt;
+          document.getElementById('sb_first_tct').innerHTML       = sb.first.tct;
 
           document.getElementById('sb_current_typ').innerHTML     = sb.current.typ;
           document.getElementById('sb_current_src').innerHTML     = sb.current.src;
@@ -150,6 +174,9 @@ html
           document.getElementById('sb_current_cnt').innerHTML     = sb.current.cnt;
           document.getElementById('sb_current_trm').innerHTML     = sb.current.trm;
           document.getElementById('sb_current_id').innerHTML      = sb.current.id;
+          document.getElementById('sb_current_plt').innerHTML     = sb.current.plt;
+          document.getElementById('sb_current_fmt').innerHTML     = sb.current.fmt;
+          document.getElementById('sb_current_tct').innerHTML     = sb.current.tct;
 
           document.getElementById('sb_first_add_fd').innerHTML    = sb.first_add.fd;
           document.getElementById('sb_first_add_ep').innerHTML    = sb.first_add.ep;
@@ -174,9 +201,9 @@ html
         h2 Test Links
         h3 UTM
         p
-          a [href="?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js&utm_term=sourcebuster_js_google_keyword o simplemente una clave de google&utm_id=20110927"] ?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...
+          a [href="?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js&utm_term=sourcebuster_js_google_keyword o simplemente una clave de google&utm_content=ad1&utm_id=20110927&utm_source_platform=gads&utm_creative_format=img&utm_marketing_tactic=rkt"] ?utm_source=google&utm_medium=cpc&utm_campaign=g_test_sourcebuster_js...
           br
-          a [href="?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js&utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса&utm_id=20110927"] ?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...
+          a [href="?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js&utm_term=sourcebuster_js_yandex_keyword или просто ключ яндекса&utm_content=ad2&utm_id=20110927&utm_source_platform=mnl&utm_creative_format=vid&utm_marketing_tactic=onb"] ?utm_source=yandex&utm_medium=cpc&utm_campaign=y_test_sourcebuster_js...
 
         / h3 Organic
         / p

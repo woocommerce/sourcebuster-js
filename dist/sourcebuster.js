@@ -46,7 +46,10 @@ var data = {
       campaign:       'cmp',
       content:        'cnt',
       term:           'trm',
-      id:             'id'
+      id:             'id',
+      platform:       'plt',
+      format:         'fmt',
+      tactic:         'tct'
     },
 
     extra: {
@@ -80,7 +83,10 @@ var data = {
         data.aliases.main.campaign  + '=' + sbjs.campaign + data.delimiter +
         data.aliases.main.content   + '=' + sbjs.content  + data.delimiter +
         data.aliases.main.term      + '=' + sbjs.term     + data.delimiter +
-        data.aliases.main.id        + '=' + sbjs.id
+        data.aliases.main.id        + '=' + sbjs.id       + data.delimiter +
+        data.aliases.main.platform  + '=' + sbjs.platform + data.delimiter +
+        data.aliases.main.format    + '=' + sbjs.format   + data.delimiter +
+        data.aliases.main.tactic    + '=' + sbjs.tactic
       );
     },
 
@@ -348,22 +354,28 @@ module.exports = function(prefs) {
       __sbjs_campaign,
       __sbjs_content,
       __sbjs_term,
-      __sbjs_id;
+      __sbjs_id,
+      __sbjs_platform,
+      __sbjs_format,
+      __sbjs_tactic;
 
   function mainData() {
     var sbjs_data;
     if (
-        typeof get_param.utm_source        !== 'undefined' ||
-        typeof get_param.utm_medium        !== 'undefined' ||
-        typeof get_param.utm_campaign      !== 'undefined' ||
-        typeof get_param.utm_content       !== 'undefined' ||
-        typeof get_param.utm_term          !== 'undefined' ||
-        typeof get_param.utm_id            !== 'undefined' ||
-        typeof get_param.gclid             !== 'undefined' ||
-        typeof get_param.yclid             !== 'undefined' ||
-        typeof get_param[p.campaign_param] !== 'undefined' ||
-        typeof get_param[p.term_param]     !== 'undefined' ||
-        typeof get_param[p.content_param]  !== 'undefined'
+        typeof get_param.utm_source           !== 'undefined' ||
+        typeof get_param.utm_medium           !== 'undefined' ||
+        typeof get_param.utm_campaign         !== 'undefined' ||
+        typeof get_param.utm_content          !== 'undefined' ||
+        typeof get_param.utm_term             !== 'undefined' ||
+        typeof get_param.utm_id               !== 'undefined' ||
+        typeof get_param.utm_source_platform  !== 'undefined' ||
+        typeof get_param.utm_creative_format  !== 'undefined' ||
+        typeof get_param.utm_marketing_tactic !== 'undefined' ||
+        typeof get_param.gclid                !== 'undefined' ||
+        typeof get_param.yclid                !== 'undefined' ||
+        typeof get_param[p.campaign_param]    !== 'undefined' ||
+        typeof get_param[p.term_param]        !== 'undefined' ||
+        typeof get_param[p.content_param]     !== 'undefined'
     ) {
       setFirstAndCurrentExtraData();
       sbjs_data = getData(terms.traffic.utm);
@@ -431,7 +443,10 @@ module.exports = function(prefs) {
           __sbjs_content = terms.none;
         }
 
-        __sbjs_id = get_param.utm_id || terms.none;
+        __sbjs_id       = get_param.utm_id || terms.none;
+        __sbjs_platform = get_param.utm_source_platform || terms.none;
+        __sbjs_format   = get_param.utm_creative_format || terms.none;
+        __sbjs_tactic   = get_param.utm_marketing_tactic || terms.none;
 
         if (typeof get_param.utm_term !== 'undefined') {
           __sbjs_term = get_param.utm_term;
@@ -451,6 +466,9 @@ module.exports = function(prefs) {
         __sbjs_content  = terms.none;
         __sbjs_term     = terms.none;
         __sbjs_id       = terms.none;
+        __sbjs_platform = terms.none;
+        __sbjs_format   = terms.none;
+        __sbjs_tactic   = terms.none;
         break;
 
       case terms.traffic.referral:
@@ -461,6 +479,9 @@ module.exports = function(prefs) {
         __sbjs_content  = uri.parse(document.referrer).path;
         __sbjs_term     = terms.none;
         __sbjs_id       = terms.none;
+        __sbjs_platform = terms.none;
+        __sbjs_format   = terms.none;
+        __sbjs_tactic   = terms.none;
         break;
 
       case terms.traffic.typein:
@@ -471,6 +492,9 @@ module.exports = function(prefs) {
         __sbjs_content  = terms.none;
         __sbjs_term     = terms.none;
         __sbjs_id       = terms.none;
+        __sbjs_platform = terms.none;
+        __sbjs_format   = terms.none;
+        __sbjs_tactic   = terms.none;
         break;
 
       default:
@@ -481,6 +505,9 @@ module.exports = function(prefs) {
         __sbjs_content  = terms.oops;
         __sbjs_term     = terms.oops;
         __sbjs_id       = terms.oops;
+        __sbjs_platform = terms.oops;
+        __sbjs_format   = terms.oops;
+        __sbjs_tactic   = terms.oops;
     }
     var sbjs_data = {
       type:             __sbjs_type,
@@ -489,7 +516,10 @@ module.exports = function(prefs) {
       campaign:         __sbjs_campaign,
       content:          __sbjs_content,
       term:             __sbjs_term,
-      id:               __sbjs_id
+      id:               __sbjs_id,
+      platform:         __sbjs_platform,
+      format:           __sbjs_format,
+      tactic:           __sbjs_tactic
     };
 
     return data.pack.main(sbjs_data);
