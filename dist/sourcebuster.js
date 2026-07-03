@@ -90,11 +90,11 @@ var data = {
       );
     },
 
-    extra: function(timezone_offset) {
+    extra: function(timezone_offset, max_url_length) {
       return (
         data.aliases.extra.fire_date      + '=' + utils.setDate(new Date, timezone_offset) + data.delimiter +
-        data.aliases.extra.entrance_point + '=' + document.location.href                   + data.delimiter +
-        data.aliases.extra.referer        + '=' + (document.referrer || terms.none)
+        data.aliases.extra.entrance_point + '=' + utils.truncate(document.location.href, max_url_length) + data.delimiter +
+        data.aliases.extra.referer        + '=' + (utils.truncate(document.referrer, max_url_length) || terms.none)
       );
     },
 
@@ -106,10 +106,10 @@ var data = {
       );
     },
 
-    session: function(pages) {
+    session: function(pages, max_url_length) {
       return (
       data.aliases.session.pages_seen   + '=' + pages + data.delimiter +
-      data.aliases.session.current_page + '=' + document.location.href
+      data.aliases.session.current_page + '=' + utils.truncate(document.location.href, max_url_length)
       );
     },
 
@@ -345,6 +345,13 @@ module.exports = {
 
   randomInt: function(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
+
+  truncate: function(string, max_length) {
+    if (typeof string !== 'string' || !max_length || string.length <= max_length) {
+      return string;
+    }
+    return string.substring(0, max_length);
   }
 
 };
@@ -648,9 +655,9 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset, p.max_url_length), lifetime, domain, isolate);
     if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset, p.max_url_length), lifetime, domain, isolate);
     }
   }
 
@@ -682,7 +689,7 @@ module.exports = function(prefs) {
       pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    cookies.set(data.containers.session, data.pack.session(pages_count, p.max_url_length), p.session_length, domain, isolate);
 
     // Promocode
     if (p.promocode && !cookies.get(data.containers.promocode)) {
@@ -806,6 +813,9 @@ module.exports = {
 
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
+
+    // Set `max url length` for entrance point, current page and referer stored in cookies
+    params.max_url_length = this.validate.checkInt(user.max_url_length) || 512;
 
     // Enable `base64 encoding`
     params.base64 = user.base64 || false;

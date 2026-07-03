@@ -41,7 +41,7 @@ gem install slim
 
 ```shell
 # with `npm`
-npm install github:woocommerce/sourcebuster-js#v1.1.2
+npm install github:woocommerce/sourcebuster-js#v1.2.0
 ```
 
 Or you can [download this repo](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) and use `sourcebuster.min.js` from the `/dist` folder.
@@ -93,10 +93,11 @@ sbjs.init({
 });
 ```
 
-There are 11 types of user settings:
+There are 12 types of user settings:
 * lifetime
 * session_length
 * base64
+* max_url_length
 * domain
 * referrals
 * organics
@@ -123,6 +124,11 @@ sbjs.init({
   // Enable Base64 encoding for cookie data
   // disabled by default
   base64: true,
+
+  // Set max length (in characters) for URLs stored in cookies
+  // (entrance point, current page and referer)
+  // 512 is default
+  max_url_length: 512,
 
   // Set domain name in cookies
   domain: {
@@ -212,6 +218,16 @@ Explanation to `referral` logic: sometimes visitor within the current visit (ses
 base64: true
 ```
 Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling Base64 encoding for cookie data. This is disabled by default.
+
+#### max_url_length
+
+```javascript
+max_url_length: 512
+```
+
+Setting up max length (in characters) for URLs stored in cookies: entrance point (`current_add.ep` / `first_add.ep`), current page (`session.cpg`) and referer (`current_add.rf` / `first_add.rf`). Default is 512.
+
+URLs with long query strings (for example, a lot of `utm_*` params) can make cookies large enough to hit browser or web server limits (typically around 4KB per cookie, and 8KB total across all cookies for some servers). Values longer than `max_url_length` are truncated before being stored; shorter values are left untouched.
 
 #### domain
 

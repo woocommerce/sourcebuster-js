@@ -20,6 +20,9 @@ module.exports = {
     // Set `timezone offset` in hours
     params.timezone_offset = this.validate.checkInt(user.timezone_offset);
 
+    // Set `max url length` for entrance point, current page and referer stored in cookies
+    params.max_url_length = this.validate.checkInt(user.max_url_length) || 512;
+
     // Enable `base64 encoding`
     params.base64 = user.base64 || false;
 

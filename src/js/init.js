@@ -296,9 +296,9 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset, p.max_url_length), lifetime, domain, isolate);
     if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset, p.max_url_length), lifetime, domain, isolate);
     }
   }
 
@@ -330,7 +330,7 @@ module.exports = function(prefs) {
       pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    cookies.set(data.containers.session, data.pack.session(pages_count, p.max_url_length), p.session_length, domain, isolate);
 
     // Promocode
     if (p.promocode && !cookies.get(data.containers.promocode)) {

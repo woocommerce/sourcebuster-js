@@ -1,3 +1,8 @@
+## 1.2.0
+
+Features:
+- Add `max_url_length` option to cap the length of URLs stored in cookies (entrance point, current page, referer). Default is 512 chars.
+
 ## 1.1.2
 
 Features:

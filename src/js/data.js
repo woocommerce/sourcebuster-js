@@ -74,11 +74,11 @@ var data = {
       );
     },
 
-    extra: function(timezone_offset) {
+    extra: function(timezone_offset, max_url_length) {
       return (
         data.aliases.extra.fire_date      + '=' + utils.setDate(new Date, timezone_offset) + data.delimiter +
-        data.aliases.extra.entrance_point + '=' + document.location.href                   + data.delimiter +
-        data.aliases.extra.referer        + '=' + (document.referrer || terms.none)
+        data.aliases.extra.entrance_point + '=' + utils.truncate(document.location.href, max_url_length) + data.delimiter +
+        data.aliases.extra.referer        + '=' + (utils.truncate(document.referrer, max_url_length) || terms.none)
       );
     },
 
@@ -90,10 +90,10 @@ var data = {
       );
     },
 
-    session: function(pages) {
+    session: function(pages, max_url_length) {
       return (
       data.aliases.session.pages_seen   + '=' + pages + data.delimiter +
-      data.aliases.session.current_page + '=' + document.location.href
+      data.aliases.session.current_page + '=' + utils.truncate(document.location.href, max_url_length)
       );
     },
 
