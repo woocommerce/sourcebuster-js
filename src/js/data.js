@@ -1,7 +1,33 @@
 "use strict";
 
 var terms = require('./terms'),
+    uri   = require('./helpers/uri'),
     utils = require('./helpers/utils');
+
+// Escape field delimiters before cookie-budget parsing.
+function packValue(value) {
+  return String(value || '').replace(/\|\|\|/g, '%7C%7C%7C');
+}
+
+function landingPath() {
+  return document.location.pathname || uri.parse(document.location.href).path || '/';
+}
+
+function refererPath() {
+  var parsed;
+
+  if (!document.referrer) {
+    return terms.none;
+  }
+
+  parsed = uri.parse(document.referrer);
+  return (
+    (parsed.protocol ? parsed.protocol + '://' : '') +
+    parsed.host +
+    (parsed.port ? ':' + parsed.port : '') +
+    (parsed.path || '/')
+  );
+}
 
 var data = {
 
@@ -61,39 +87,39 @@ var data = {
 
     main: function(sbjs) {
       return (
-        data.aliases.main.type      + '=' + sbjs.type     + data.delimiter +
-        data.aliases.main.source    + '=' + sbjs.source   + data.delimiter +
-        data.aliases.main.medium    + '=' + sbjs.medium   + data.delimiter +
-        data.aliases.main.campaign  + '=' + sbjs.campaign + data.delimiter +
-        data.aliases.main.content   + '=' + sbjs.content  + data.delimiter +
-        data.aliases.main.term      + '=' + sbjs.term     + data.delimiter +
-        data.aliases.main.id        + '=' + sbjs.id       + data.delimiter +
-        data.aliases.main.platform  + '=' + sbjs.platform + data.delimiter +
-        data.aliases.main.format    + '=' + sbjs.format   + data.delimiter +
-        data.aliases.main.tactic    + '=' + sbjs.tactic
+        data.aliases.main.type      + '=' + packValue(sbjs.type)     + data.delimiter +
+        data.aliases.main.source    + '=' + packValue(sbjs.source)   + data.delimiter +
+        data.aliases.main.medium    + '=' + packValue(sbjs.medium)   + data.delimiter +
+        data.aliases.main.campaign  + '=' + packValue(sbjs.campaign) + data.delimiter +
+        data.aliases.main.content   + '=' + packValue(sbjs.content)  + data.delimiter +
+        data.aliases.main.term      + '=' + packValue(sbjs.term)     + data.delimiter +
+        data.aliases.main.id        + '=' + packValue(sbjs.id)       + data.delimiter +
+        data.aliases.main.platform  + '=' + packValue(sbjs.platform) + data.delimiter +
+        data.aliases.main.format    + '=' + packValue(sbjs.format)   + data.delimiter +
+        data.aliases.main.tactic    + '=' + packValue(sbjs.tactic)
       );
     },
 
-    extra: function(timezone_offset, max_url_length) {
+    extra: function(timezone_offset) {
       return (
         data.aliases.extra.fire_date      + '=' + utils.setDate(new Date, timezone_offset) + data.delimiter +
-        data.aliases.extra.entrance_point + '=' + utils.truncate(document.location.href, max_url_length) + data.delimiter +
-        data.aliases.extra.referer        + '=' + (utils.truncate(document.referrer, max_url_length) || terms.none)
+        data.aliases.extra.entrance_point + '=' + packValue(landingPath())                  + data.delimiter +
+        data.aliases.extra.referer        + '=' + packValue(refererPath())
       );
     },
 
     user: function(visits, user_ip) {
       return (
         data.aliases.udata.visits + '=' + visits  + data.delimiter +
-        data.aliases.udata.ip     + '=' + user_ip + data.delimiter +
-        data.aliases.udata.agent  + '=' + navigator.userAgent
+        data.aliases.udata.ip     + '=' + packValue(user_ip) + data.delimiter +
+        data.aliases.udata.agent  + '=' + packValue(navigator.userAgent)
       );
     },
 
-    session: function(pages, max_url_length) {
+    session: function(pages) {
       return (
       data.aliases.session.pages_seen   + '=' + pages + data.delimiter +
-      data.aliases.session.current_page + '=' + utils.truncate(document.location.href, max_url_length)
+      data.aliases.session.current_page + '=' + packValue(landingPath())
       );
     },
 

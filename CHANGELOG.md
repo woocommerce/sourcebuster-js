@@ -1,7 +1,8 @@
 ## 1.2.0
 
 Features:
-- Add `max_url_length` option to cap the length of URLs stored in cookies (entrance point, current page, referer). Default is 512 chars.
+- Bound managed Sourcebuster cookie payloads to 2,048 request bytes in plain and Base64 modes.
+- Removed query strings from stored landing and referrer paths to prevent duplicate URL payloads.
 
 ## 1.1.2
 
