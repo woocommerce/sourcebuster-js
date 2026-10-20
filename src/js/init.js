@@ -14,11 +14,16 @@ module.exports = function(prefs) {
   var get_param = uri.getParam();
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
-      lifetime  = p.lifetime;
+      lifetime  = p.lifetime,
+      fields    = p.fields;
 
   cookies.setBase64Flag( p.base64 );
 
   migrations.go(lifetime, domain, isolate);
+
+  if (fields) {
+    addRequiredFields();
+  }
 
   var __sbjs_type,
       __sbjs_source,
@@ -296,18 +301,72 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    setCookie(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime);
     if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+      setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
     }
+  }
+
+  // Some containers decide how others are written, so keep them whenever those are written:
+  // `current` is copied into `first`, and whether it exists decides `typein` attribution,
+  // `session` existing decides `referral` attribution and the visit count in `udata`.
+  function addRequiredFields() {
+    var c = data.containers;
+
+    if (fields[c.first]) {
+      addFields(c.current, fields[c.first]);
+    }
+    if (!fields[c.current] && (fields[c.current_extra] || fields[c.first_extra])) {
+      addFields(c.current, [data.aliases.main.type]);
+    }
+    if (
+        !fields[c.session] &&
+        (fields[c.current] || (fields[c.udata] && fields[c.udata].indexOf(data.aliases.udata.visits) !== -1))
+    ) {
+      addFields(c.session, [data.aliases.session.pages_seen]);
+    }
+  }
+
+  function addFields(name, keys) {
+    fields[name] = fields[name] || [];
+    for (var i = 0; i < keys.length; i++) {
+      if (fields[name].indexOf(keys[i]) === -1) {
+        fields[name].push(keys[i]);
+      }
+    }
+  }
+
+  // Writes the container, keeping only the listed fields when `fields` is set
+  function setCookie(name, value, minutes) {
+    if (fields) {
+      if (!fields[name]) {
+        return;
+      }
+      value = filterFields(value, fields[name]);
+    }
+    cookies.set(name, value, minutes, domain, isolate);
+  }
+
+  function filterFields(value, keys) {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    var parts = value.split(data.delimiter),
+        kept  = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (keys.indexOf(parts[i].split('=')[0]) !== -1) {
+        kept.push(parts[i]);
+      }
+    }
+    return kept.join(data.delimiter);
   }
 
   (function setData() {
 
     // Main data
-    cookies.set(data.containers.current, mainData(), lifetime, domain, isolate);
+    setCookie(data.containers.current, mainData(), lifetime);
     if (!cookies.get(data.containers.first)) {
-      cookies.set(data.containers.first, cookies.get(data.containers.current), lifetime, domain, isolate);
+      setCookie(data.containers.first, cookies.get(data.containers.current), lifetime);
     }
 
     // User data
@@ -320,7 +379,7 @@ module.exports = function(prefs) {
       visits  = cookies.get(data.containers.session) ? visits : visits + 1;
       udata   = data.pack.user(visits, p.user_ip);
     }
-    cookies.set(data.containers.udata, udata, lifetime, domain, isolate);
+    setCookie(data.containers.udata, udata, lifetime);
 
     // Session
     var pages_count;
@@ -330,11 +389,11 @@ module.exports = function(prefs) {
       pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    setCookie(data.containers.session, data.pack.session(pages_count), p.session_length);
 
     // Promocode
     if (p.promocode && !cookies.get(data.containers.promocode)) {
-      cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+      setCookie(data.containers.promocode, data.pack.promo(p.promocode), lifetime);
     }
 
   })();

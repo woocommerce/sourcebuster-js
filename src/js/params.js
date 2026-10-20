@@ -1,6 +1,7 @@
 "use strict";
 
 var terms = require('./terms'),
+    data  = require('./data'),
     uri   = require('./helpers/uri');
 
 module.exports = {
@@ -32,6 +33,9 @@ module.exports = {
 
     // Set `user ip`
     params.user_ip = user.user_ip || terms.none;
+
+    // Set `fields` to write, as `container.field` paths
+    params.fields = this.validate.checkFields(user.fields);
 
     // Set `promocode`
     if (user.promocode) {
@@ -116,6 +120,51 @@ module.exports = {
 
     isString: function(v) {
       return Object.prototype.toString.call(v) === '[object String]';
+    },
+
+    // Returns the valid `container.field` paths as `{ cookie name: [ fields ] }`,
+    // or false when there are none, so that every field is written
+    checkFields: function(v) {
+      if (Object.prototype.toString.call(v) !== '[object Array]') {
+        return false;
+      }
+
+      var c       = data.containers,
+          a       = data.aliases,
+          known   = {},
+          fields  = false;
+
+      known[c.current]       = known[c.first]       = this.values(a.main);
+      known[c.current_extra] = known[c.first_extra] = this.values(a.extra);
+      known[c.session]       = this.values(a.session);
+      known[c.udata]         = this.values(a.udata);
+      known[c.promocode]     = [a.promo];
+
+      for (var i = 0; i < v.length; i++) {
+        var path  = this.isString(v[i]) ? v[i].split('.') : [],
+            name  = 'sbjs_' + path[0],
+            field = path[1];
+
+        if (path.length === 2 && known.hasOwnProperty(name) && known[name].indexOf(field) !== -1) {
+          fields = fields || {};
+          fields[name] = fields[name] || [];
+          if (fields[name].indexOf(field) === -1) {
+            fields[name].push(field);
+          }
+        }
+      }
+
+      return fields;
+    },
+
+    values: function(obj) {
+      var values = [];
+      for (var prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          values.push(obj[prop]);
+        }
+      }
+      return values;
     }
 
   }

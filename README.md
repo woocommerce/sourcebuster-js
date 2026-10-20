@@ -93,10 +93,11 @@ sbjs.init({
 });
 ```
 
-There are 11 types of user settings:
+There are 13 types of user settings:
 * lifetime
 * session_length
 * base64
+* fields
 * domain
 * referrals
 * organics
@@ -123,6 +124,10 @@ sbjs.init({
   // Enable Base64 encoding for cookie data
   // disabled by default
   base64: true,
+
+  // Only write these fields to cookies, as `container.field` paths
+  // all fields are written by default
+  fields: [ 'current.typ', 'current.src', 'current_add.ep', 'session.pgs', 'udata.vst' ],
 
   // Set domain name in cookies
   domain: {
@@ -212,6 +217,22 @@ Explanation to `referral` logic: sometimes visitor within the current visit (ses
 base64: true
 ```
 Some Web Application Firewalls will flag specific substrings in cookies as malicious. This can be avoided by enabling Base64 encoding for cookie data. This is disabled by default.
+
+#### fields
+
+```javascript
+fields: [ 'current.typ', 'current.src', 'current_add.ep', 'session.pgs', 'udata.vst' ]
+```
+
+Lists the fields to write to cookies, using the same `container.field` paths as `sbjs.get` (see [Usage](#usage)). By default all fields are written. Use it to keep the cookies small when you only read some of the data.
+
+* Fields that are not listed are left out of the cookie, so they are `undefined` in `sbjs.get`.
+* Containers with no listed fields are not written. Existing cookies are never removed, so a container written earlier, or by another script that runs `sbjs.init` without this setting, is kept and still shows up in `sbjs.get`.
+* Fields that other listed fields depend on are still written, so the listed fields keep the same values as without this setting. `current.typ` is written for `current_add`, `first` and `first_add`, the listed `first` fields are also written to `current`, which `first` is copied from, and `session.pgs` is written for `current`, `current_add`, `first`, `first_add` and `udata.vst`.
+* If another script on the page runs `sbjs.init` without this setting after this one, it rewrites the full cookies. Its `first_add` can be missing, or hold a later visit, when the first visit is typein or referral, as that visit is already recorded in `current` and `session` when it runs. List the `first_add` fields to avoid this.
+* Unknown paths are ignored. If no path is valid, all fields are written.
+* `promocode` only writes `sbjs_promo` when `promo.code` is listed.
+* A container that is written only gets the listed fields, which replaces any unlisted fields it held before. Containers that are not rewritten on every page view (`current_add`, `first`, `first_add`, `promo`) keep their unlisted fields until they are next written.
 
 #### domain
 
