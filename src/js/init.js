@@ -303,7 +303,13 @@ module.exports = function(prefs) {
   function setFirstAndCurrentExtraData() {
     setCookie(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime);
     if (!cookies.get(data.containers.first_extra)) {
-      setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
+      if (fields && !fields[data.containers.first_extra] && (fields[data.containers.current] || fields[data.containers.session])) {
+        // Written in full even when not listed: another script that runs `sbjs.init` after this one
+        // sees `current` or `session`, so it no longer records this visit in `first_add` itself
+        cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+      } else {
+        setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
+      }
     }
   }
 
@@ -321,7 +327,7 @@ module.exports = function(prefs) {
     }
     if (
         !fields[c.session] &&
-        (fields[c.current] || (fields[c.udata] && fields[c.udata].indexOf(data.aliases.udata.visits) !== -1))
+        (fields[c.current] || (fields[c.udata] && utils.hasKey(fields[c.udata], data.aliases.udata.visits)))
     ) {
       addFields(c.session, [data.aliases.session.pages_seen]);
     }
@@ -330,35 +336,77 @@ module.exports = function(prefs) {
   function addFields(name, keys) {
     fields[name] = fields[name] || [];
     for (var i = 0; i < keys.length; i++) {
-      if (fields[name].indexOf(keys[i]) === -1) {
+      if (!utils.hasKey(fields[name], keys[i])) {
         fields[name].push(keys[i]);
       }
     }
   }
 
-  // Writes the container, keeping only the listed fields when `fields` is set
+  // Writes the container, with only the listed fields when `fields` is set
   function setCookie(name, value, minutes) {
     if (fields) {
       if (!fields[name]) {
         return;
       }
-      value = filterFields(value, fields[name]);
+      value = mergeFields(name, value);
     }
     cookies.set(name, value, minutes, domain, isolate);
   }
 
-  function filterFields(value, keys) {
+  // Takes the listed fields from `value`, and keeps the unlisted fields of the existing cookie,
+  // which another script that runs `sbjs.init` without `fields` may have written
+  function mergeFields(name, value) {
     if (typeof value !== 'string') {
       return value;
     }
-    var parts = value.split(data.delimiter),
-        kept  = [];
-    for (var i = 0; i < parts.length; i++) {
-      if (keys.indexOf(parts[i].split('=')[0]) !== -1) {
-        kept.push(parts[i]);
+    var keys     = fields[name],
+        written  = splitFields(value),
+        existing = splitFields(cookies.get(name)),
+        merged   = [],
+        i,
+        key;
+
+    // `session` and `udata` are rewritten on every page view. The other containers belong to an
+    // attribution, so their unlisted fields are only kept when the listed ones are the same.
+    var keep = name === data.containers.session || name === data.containers.udata;
+    if (!keep) {
+      keep = true;
+      for (i = 0; i < keys.length; i++) {
+        if (existing.values[keys[i]] !== written.values[keys[i]]) {
+          keep = false;
+        }
       }
     }
-    return kept.join(data.delimiter);
+
+    for (i = 0; i < written.keys.length; i++) {
+      key = written.keys[i];
+      if (utils.hasKey(keys, key)) {
+        merged.push(key + '=' + written.values[key]);
+      }
+    }
+    for (i = 0; keep && i < existing.keys.length; i++) {
+      key = existing.keys[i];
+      if (!utils.hasKey(keys, key)) {
+        merged.push(key + '=' + existing.values[key]);
+      }
+    }
+    return merged.join(data.delimiter);
+  }
+
+  function splitFields(value) {
+    var parts  = value ? value.split(data.delimiter) : [],
+        result = { keys: [], values: {} },
+        separator,
+        key;
+    for (var i = 0; i < parts.length; i++) {
+      separator = parts[i].indexOf('=');
+      key = parts[i].substring(0, separator);
+      if (separator > 0 && !result.values.hasOwnProperty(key)) {
+        result.keys.push(key);
+        result.values[key] = parts[i].substring(separator + 1);
+      }
+    }
+    return result;
   }
 
   (function setData() {

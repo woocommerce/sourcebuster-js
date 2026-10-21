@@ -33,7 +33,7 @@
   "scripts": {
     "start": "NODE_ENV=development http-server -a js.dev -p 8080 & gulp",
     "build": "NODE_ENV=production gulp build",
-    "test": "node test/cookie-budget.test.js"
+    "test": "node test/cookie-budget.test.js && node test/fields.test.js"
   },
   "lintOptions": {
     "exported": {

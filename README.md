@@ -226,13 +226,13 @@ fields: [ 'current.typ', 'current.src', 'current_add.ep', 'session.pgs', 'udata.
 
 Lists the fields to write to cookies, using the same `container.field` paths as `sbjs.get` (see [Usage](#usage)). By default all fields are written. Use it to keep the cookies small when you only read some of the data.
 
-* Fields that are not listed are left out of the cookie, so they are `undefined` in `sbjs.get`.
+* Fields that are not listed are not written, so they are `undefined` in `sbjs.get`, unless the cookie already holds them (see below).
 * Containers with no listed fields are not written. Existing cookies are never removed, so a container written earlier, or by another script that runs `sbjs.init` without this setting, is kept and still shows up in `sbjs.get`.
+* Unlisted fields that the existing cookie already holds, for example written by another script without this setting, are kept. `session` and `udata` always keep them. `current`, `current_add`, `first` and `first_add` only keep them when the listed fields are unchanged, as they belong to an earlier visit otherwise.
 * Fields that other listed fields depend on are still written, so the listed fields keep the same values as without this setting. `current.typ` is written for `current_add`, `first` and `first_add`, the listed `first` fields are also written to `current`, which `first` is copied from, and `session.pgs` is written for `current`, `current_add`, `first`, `first_add` and `udata.vst`.
-* If another script on the page runs `sbjs.init` without this setting after this one, it rewrites the full cookies. Its `first_add` can be missing, or hold a later visit, when the first visit is typein or referral, as that visit is already recorded in `current` and `session` when it runs. List the `first_add` fields to avoid this.
+* `first_add` is written in full when it doesn't exist yet and `current` or `session` is written, even when it isn't listed. Otherwise another script that runs `sbjs.init` without this setting after this one would not record the first visit in it, as `current` and `session` already exist by then.
 * Unknown paths are ignored. If no path is valid, all fields are written.
 * `promocode` only writes `sbjs_promo` when `promo.code` is listed.
-* A container that is written only gets the listed fields, which replaces any unlisted fields it held before. Containers that are not rewritten on every page view (`current_add`, `first`, `first_add`, `promo`) keep their unlisted fields until they are next written.
 
 #### domain
 

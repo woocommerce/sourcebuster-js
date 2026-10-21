@@ -2,7 +2,8 @@
 
 var terms = require('./terms'),
     data  = require('./data'),
-    uri   = require('./helpers/uri');
+    uri   = require('./helpers/uri'),
+    utils = require('./helpers/utils');
 
 module.exports = {
 
@@ -145,10 +146,10 @@ module.exports = {
             name  = 'sbjs_' + path[0],
             field = path[1];
 
-        if (path.length === 2 && known.hasOwnProperty(name) && known[name].indexOf(field) !== -1) {
+        if (path.length === 2 && known.hasOwnProperty(name) && utils.hasKey(known[name], field)) {
           fields = fields || {};
           fields[name] = fields[name] || [];
-          if (fields[name].indexOf(field) === -1) {
+          if (!utils.hasKey(fields[name], field)) {
             fields[name].push(field);
           }
         }

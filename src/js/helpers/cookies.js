@@ -1,6 +1,7 @@
 "use strict";
 
 var data              = require('../data'),
+    utils             = require('./utils'),
     delimiter         = data.delimiter,
     requestBudget     = 2304,
     containerBudgets  = {},
@@ -115,16 +116,6 @@ function removeLastCodePoint(value) {
   return value.substring(0, end);
 }
 
-function hasKey(keys, key) {
-  var i;
-  for (i = 0; i < keys.length; i++) {
-    if (keys[i] === key) {
-      return true;
-    }
-  }
-  return false;
-}
-
 function parseFields(value, keys) {
   var parts = String(value || '').split(delimiter),
       parsed = {},
@@ -138,7 +129,7 @@ function parseFields(value, keys) {
       continue;
     }
     key = parts[i].substring(0, separator);
-    if (hasKey(keys, key) && typeof parsed[key] === 'undefined') {
+    if (utils.hasKey(keys, key) && typeof parsed[key] === 'undefined') {
       parsed[key] = parts[i].substring(separator + 1);
     }
   }
@@ -148,8 +139,11 @@ function parseFields(value, keys) {
 function serializeFields(keys, values) {
   var packed = [],
       i;
+  // Fields missing from the value, e.g. left out with the `fields` setting, stay out
   for (i = 0; i < keys.length; i++) {
-    packed.push(keys[i] + '=' + (values[keys[i]] || ''));
+    if (typeof values[keys[i]] !== 'undefined') {
+      packed.push(keys[i] + '=' + values[keys[i]]);
+    }
   }
   return packed.join(delimiter);
 }
@@ -169,7 +163,9 @@ function fitPackedValue(name, value, maxBytes, useBase64) {
 
   for (i = 0; i < keys.length; i++) {
     key = keys[i];
-    values[key] = trimToEncodedBytes(values[key], fieldBudgets[key]);
+    if (typeof values[key] !== 'undefined') {
+      values[key] = trimToEncodedBytes(values[key], fieldBudgets[key]);
+    }
   }
 
   packed = serializeFields(keys, values);
