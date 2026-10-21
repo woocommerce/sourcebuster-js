@@ -1,3 +1,9 @@
+## Unreleased
+
+Fixes:
+- Store URL values decoded once, so a non-ASCII character uses its UTF-8 escape once instead of twice. A Japanese `utm_content` now keeps about 28 characters instead of 17 in plain mode, and 17 instead of 10 in Base64 mode. Values read through `sbjs.get` are unchanged.
+- Keep malformed percent escapes in URL values as they are, instead of decoding them to unrelated characters.
+
 ## 1.2.0
 
 Fixes:

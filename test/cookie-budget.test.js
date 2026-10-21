@@ -211,4 +211,45 @@ var desktopAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
   );
 });
 
+// URL values are decoded once before storing, so a non-ASCII character costs its
+// UTF-8 escape once. A 3-byte character then costs 9 bytes of the 256-byte cnt budget.
+var japanese = new Array(9).join('日本語キャンペーン');
+[[false, 28], [true, 17]].forEach(function(mode) {
+  setBrowser('?utm_source=google&utm_content=' + encodeURIComponent(japanese), '/');
+  sbjs.init({ base64: mode[0] });
+  assertDecodedPrefix(sbjs.get.current.cnt, japanese, 'japanese base64=' + mode[0]);
+  assert(
+    sbjs.get.current.cnt.length >= mode[1],
+    'japanese cnt kept ' + sbjs.get.current.cnt.length + ' characters with base64=' + mode[0]
+  );
+});
+
+// Literal "%" and "|" survive the round trip, and malformed escapes stay as they are.
+[
+  ['50%25off', '50%off'],
+  ['100%25E6', '100%E6'],
+  ['a%7Cb', 'a|b'],
+  ['%E6%41%80', '%E6%41%80'],
+  ['%GG', '%GG']
+].forEach(function(pair) {
+  [false, true].forEach(function(useBase64) {
+    setBrowser('?utm_source=google&utm_content=' + pair[0] + '&utm_term=t', '/');
+    sbjs.init({ base64: useBase64 });
+    assert.strictEqual(sbjs.get.current.cnt, pair[1], pair[0] + ' base64=' + useBase64);
+    assert.strictEqual(sbjs.get.current.trm, 't', pair[0] + ' broke the next field');
+  });
+});
+
+// Cookies written by 1.2.0 and earlier keep the raw URL escapes in each field.
+// They still parse, also after being written again.
+[false, true].forEach(function(useBase64) {
+  cookies.setBase64Flag(useBase64);
+  setBrowser('', '/');
+  assert.strictEqual(
+    parsedPrepared(data.containers.current, 'typ=utm|||src=google|||cnt=%E6%97%A5%E6%9C%AC').cnt,
+    '日本',
+    'legacy encoded field changed with base64=' + useBase64
+  );
+});
+
 console.log('cookie budget tests passed');

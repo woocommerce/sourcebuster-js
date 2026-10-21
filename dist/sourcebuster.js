@@ -20,10 +20,21 @@ var terms = _dereq_('./terms'),
     uri   = _dereq_('./helpers/uri'),
     utils = _dereq_('./helpers/utils');
 
-// Escape every pipe before cookie-budget parsing. A trailing "|" or "||" would
-// otherwise merge with the "|||" delimiter and break the next field.
+// URL values arrive percent encoded, and the cookie is encoded again when it is
+// written. Decode once here, so a non-ASCII character costs its UTF-8 escape
+// once ("日" is "%E6%97%A5") instead of twice ("%25E6%2597%25A5"). Malformed
+// values are kept as they are.
+// Then escape "%" so cookies.parse() decodes the field back to the same value,
+// and every pipe, as a trailing "|" or "||" would otherwise merge with the "|||"
+// delimiter and break the next field.
 function packValue(value) {
-  return String(value || '').replace(/\|/g, '%7C');
+  var packed = String(value || '');
+  try {
+    packed = decodeURIComponent(packed);
+  } catch (error) {
+    // Keep the raw value.
+  }
+  return packed.replace(/%/g, '%25').replace(/\|/g, '%7C');
 }
 
 function landingPath() {
@@ -224,8 +235,9 @@ function encodeCookieValue(value, useBase64) {
   return useBase64 ? btoa(encoded).replace(/=+$/, '') : encoded;
 }
 
-// Values from the URL are still percent encoded. Trim on whole units only:
-// a complete %XX UTF-8 character, a surrogate pair, or a single character.
+// Packed values contain %XX escapes ("%25", "%7C", and full UTF-8 escapes in
+// cookies written by 1.2.0 and earlier). Trim on whole units only: a complete
+// %XX UTF-8 character, a surrogate pair, or a single character.
 // Cutting inside an escape makes decodeURIComponent fail on the whole field.
 var trimUnits = new RegExp(
   '%[0-7][0-9A-F]' +

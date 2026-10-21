@@ -70,8 +70,9 @@ function encodeCookieValue(value, useBase64) {
   return useBase64 ? btoa(encoded).replace(/=+$/, '') : encoded;
 }
 
-// Values from the URL are still percent encoded. Trim on whole units only:
-// a complete %XX UTF-8 character, a surrogate pair, or a single character.
+// Packed values contain %XX escapes ("%25", "%7C", and full UTF-8 escapes in
+// cookies written by 1.2.0 and earlier). Trim on whole units only: a complete
+// %XX UTF-8 character, a surrogate pair, or a single character.
 // Cutting inside an escape makes decodeURIComponent fail on the whole field.
 var trimUnits = new RegExp(
   '%[0-7][0-9A-F]' +

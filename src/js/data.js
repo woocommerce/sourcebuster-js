@@ -4,10 +4,21 @@ var terms = require('./terms'),
     uri   = require('./helpers/uri'),
     utils = require('./helpers/utils');
 
-// Escape every pipe before cookie-budget parsing. A trailing "|" or "||" would
-// otherwise merge with the "|||" delimiter and break the next field.
+// URL values arrive percent encoded, and the cookie is encoded again when it is
+// written. Decode once here, so a non-ASCII character costs its UTF-8 escape
+// once ("日" is "%E6%97%A5") instead of twice ("%25E6%2597%25A5"). Malformed
+// values are kept as they are.
+// Then escape "%" so cookies.parse() decodes the field back to the same value,
+// and every pipe, as a trailing "|" or "||" would otherwise merge with the "|||"
+// delimiter and break the next field.
 function packValue(value) {
-  return String(value || '').replace(/\|/g, '%7C');
+  var packed = String(value || '');
+  try {
+    packed = decodeURIComponent(packed);
+  } catch (error) {
+    // Keep the raw value.
+  }
+  return packed.replace(/%/g, '%25').replace(/\|/g, '%7C');
 }
 
 function landingPath() {
