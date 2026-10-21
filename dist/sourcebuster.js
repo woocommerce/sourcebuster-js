@@ -935,8 +935,8 @@ module.exports = function(prefs) {
   // - another script that runs `sbjs.init` after this one sees `current`, so it no longer records
   //   the visit in `current_add` and `first_add` itself
   // `session` existing decides `referral` attribution and the visit count in `udata`, so `session.pgs`
-  // and `udata.vst` are written with `current` and with each other. Another script that runs after
-  // this one sees `session`, so it no longer counts the visit itself.
+  // and `udata.vst` are written with `current`, `session` and `udata`. Another script that runs after
+  // this one sees `session` or `udata`, so it no longer counts the visit itself.
   function addRequiredFields() {
     var c = data.containers;
 
@@ -946,10 +946,7 @@ module.exports = function(prefs) {
         fields[c.first] = true;
       }
     }
-    if (
-        fields[c.current] || fields[c.session] ||
-        (fields[c.udata] && utils.hasKey(fields[c.udata], data.aliases.udata.visits))
-    ) {
+    if (fields[c.current] || fields[c.session] || fields[c.udata]) {
       addField(c.session, data.aliases.session.pages_seen);
       addField(c.udata, data.aliases.udata.visits);
     }
@@ -992,29 +989,32 @@ module.exports = function(prefs) {
     for (i = 0; i < written.keys.length; i++) {
       key = written.keys[i];
       if (utils.hasKey(keys, key)) {
-        merged.push(key + '=' + written.values[key]);
+        merged.push(key + '=' + written.values[i]);
       }
     }
     for (i = 0; i < existing.keys.length; i++) {
       key = existing.keys[i];
       if (!utils.hasKey(keys, key)) {
-        merged.push(key + '=' + existing.values[key]);
+        merged.push(key + '=' + existing.values[i]);
       }
     }
     return merged.join(data.delimiter);
   }
 
+  // Splits a packed value into lists of keys and values, keeping the first of duplicate keys.
+  // Lists rather than an object, as the keys come from cookies and can be any name
+  // (`hasOwnProperty`, `__proto__`).
   function splitFields(value) {
     var parts  = value ? value.split(data.delimiter) : [],
-        result = { keys: [], values: {} },
+        result = { keys: [], values: [] },
         separator,
         key;
     for (var i = 0; i < parts.length; i++) {
       separator = parts[i].indexOf('=');
       key = parts[i].substring(0, separator);
-      if (separator > 0 && !result.values.hasOwnProperty(key)) {
+      if (separator > 0 && !utils.hasKey(result.keys, key)) {
         result.keys.push(key);
-        result.values[key] = parts[i].substring(separator + 1);
+        result.values.push(parts[i].substring(separator + 1));
       }
     }
     return result;
