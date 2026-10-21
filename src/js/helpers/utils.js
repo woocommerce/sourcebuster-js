@@ -31,6 +31,16 @@ module.exports = {
 
   randomInt: function(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
+
+  hasKey: function(keys, key) {
+    var i;
+    for (i = 0; i < keys.length; i++) {
+      if (keys[i] === key) {
+        return true;
+      }
+    }
+    return false;
   }
 
 };

@@ -14,11 +14,16 @@ module.exports = function(prefs) {
   var get_param = uri.getParam();
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
-      lifetime  = p.lifetime;
+      lifetime  = p.lifetime,
+      fields    = p.fields;
 
   cookies.setBase64Flag( p.base64 );
 
   migrations.go(lifetime, domain, isolate);
+
+  if (fields) {
+    addRequiredFields();
+  }
 
   var __sbjs_type,
       __sbjs_source,
@@ -296,18 +301,111 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    cookies.set(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+    setCookie(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime);
     if (!cookies.get(data.containers.first_extra)) {
-      cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
+      setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
     }
+  }
+
+  // The attribution containers are written in full (`true`), as their fields belong together.
+  // Listing a field of `current`, `current_add`, `first` or `first_add` writes `current`, `current_add`
+  // and `first_add`, and `first` when it is listed:
+  // - `current` and `current_add` describe the same visit, so they are written together
+  // - `current` is copied into `first`, and whether it exists decides `typein` attribution
+  // - another script that runs `sbjs.init` after this one sees `current`, so it no longer records
+  //   the visit in `current_add` and `first_add` itself
+  // `session` existing decides `referral` attribution and the visit count in `udata`, so `session.pgs`
+  // and `udata.vst` are written with `current`, `session` and `udata`. Another script that runs after
+  // this one sees `session` or `udata`, so it no longer counts the visit itself.
+  function addRequiredFields() {
+    var c = data.containers;
+
+    if (fields[c.current] || fields[c.current_extra] || fields[c.first] || fields[c.first_extra]) {
+      fields[c.current] = fields[c.current_extra] = fields[c.first_extra] = true;
+      if (fields[c.first]) {
+        fields[c.first] = true;
+      }
+    }
+    if (fields[c.current] || fields[c.session] || fields[c.udata]) {
+      addField(c.session, data.aliases.session.pages_seen);
+      addField(c.udata, data.aliases.udata.visits);
+    }
+  }
+
+  function addField(name, key) {
+    fields[name] = fields[name] || [];
+    if (!utils.hasKey(fields[name], key)) {
+      fields[name].push(key);
+    }
+  }
+
+  // Writes the container, with only the listed fields of `session` and `udata` when `fields` is set
+  function setCookie(name, value, minutes) {
+    if (fields) {
+      if (!fields[name]) {
+        return;
+      }
+      if (fields[name] !== true) {
+        value = mergeFields(name, value);
+      }
+    }
+    cookies.set(name, value, minutes, domain, isolate);
+  }
+
+  // Takes the listed fields from `value`, and keeps the unlisted fields of the existing cookie,
+  // which another script that runs `sbjs.init` without `fields` may have written. `session` and
+  // `udata` are rewritten on every page view, so these belong to the same visit.
+  function mergeFields(name, value) {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    var keys     = fields[name],
+        written  = splitFields(value),
+        existing = splitFields(cookies.get(name)),
+        merged   = [],
+        i,
+        key;
+
+    for (i = 0; i < written.keys.length; i++) {
+      key = written.keys[i];
+      if (utils.hasKey(keys, key)) {
+        merged.push(key + '=' + written.values[i]);
+      }
+    }
+    for (i = 0; i < existing.keys.length; i++) {
+      key = existing.keys[i];
+      if (!utils.hasKey(keys, key)) {
+        merged.push(key + '=' + existing.values[i]);
+      }
+    }
+    return merged.join(data.delimiter);
+  }
+
+  // Splits a packed value into lists of keys and values, keeping the first of duplicate keys.
+  // Lists rather than an object, as the keys come from cookies and can be any name
+  // (`hasOwnProperty`, `__proto__`).
+  function splitFields(value) {
+    var parts  = value ? value.split(data.delimiter) : [],
+        result = { keys: [], values: [] },
+        separator,
+        key;
+    for (var i = 0; i < parts.length; i++) {
+      separator = parts[i].indexOf('=');
+      key = parts[i].substring(0, separator);
+      if (separator > 0 && !utils.hasKey(result.keys, key)) {
+        result.keys.push(key);
+        result.values.push(parts[i].substring(separator + 1));
+      }
+    }
+    return result;
   }
 
   (function setData() {
 
     // Main data
-    cookies.set(data.containers.current, mainData(), lifetime, domain, isolate);
+    setCookie(data.containers.current, mainData(), lifetime);
     if (!cookies.get(data.containers.first)) {
-      cookies.set(data.containers.first, cookies.get(data.containers.current), lifetime, domain, isolate);
+      setCookie(data.containers.first, cookies.get(data.containers.current), lifetime);
     }
 
     // User data
@@ -320,7 +418,7 @@ module.exports = function(prefs) {
       visits  = cookies.get(data.containers.session) ? visits : visits + 1;
       udata   = data.pack.user(visits, p.user_ip);
     }
-    cookies.set(data.containers.udata, udata, lifetime, domain, isolate);
+    setCookie(data.containers.udata, udata, lifetime);
 
     // Session
     var pages_count;
@@ -330,11 +428,11 @@ module.exports = function(prefs) {
       pages_count = parseInt(cookies.parse(data.containers.session)[cookies.unsbjs(data.containers.session)][data.aliases.session.pages_seen]) || 1;
       pages_count += 1;
     }
-    cookies.set(data.containers.session, data.pack.session(pages_count), p.session_length, domain, isolate);
+    setCookie(data.containers.session, data.pack.session(pages_count), p.session_length);
 
     // Promocode
     if (p.promocode && !cookies.get(data.containers.promocode)) {
-      cookies.set(data.containers.promocode, data.pack.promo(p.promocode), lifetime, domain, isolate);
+      setCookie(data.containers.promocode, data.pack.promo(p.promocode), lifetime);
     }
 
   })();
