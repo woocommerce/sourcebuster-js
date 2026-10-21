@@ -228,9 +228,10 @@ Lists the fields to write to cookies, using the same `container.field` paths as 
 
 * `current`, `current_add`, `first` and `first_add` are written in full, as their fields belong together. Listing a field of any of them writes `current`, `current_add` and `first_add`, and `first` when one of its fields is listed. `current` and `current_add` describe the same visit, and `first` is copied from `current`. `first_add` is written as well, because another script that runs `sbjs.init` after this one sees `current` and no longer records the first visit in it.
 * `session` and `udata` only get the listed fields. Fields that are not listed are `undefined` in `sbjs.get`, unless the cookie already holds them: unlisted fields that another script without this setting wrote to these cookies are kept.
-* `session.pgs` and `udata.vst` are written with `current` and with each other, as whether `session` exists decides referral attribution and the visit count. Another script that runs `sbjs.init` after this one sees `session`, and no longer counts the visit itself. The listed fields keep the same values as without this setting.
+* `session.pgs` and `udata.vst` are written with `current` and with any `session` or `udata` field, as whether `session` exists decides referral attribution and the visit count. Another script that runs `sbjs.init` after this one sees `session` or `udata`, and no longer counts the visit itself.
+* The written fields keep the same values as without this setting, apart from trimming to the cookie size limits: with fewer fields in a cookie, a long value can keep more characters.
 * Containers that are not written are not updated either. Existing cookies are never removed, so a container written earlier, or by another script that runs `sbjs.init` without this setting, is kept, still shows up in `sbjs.get`, and can describe an earlier visit.
-* When `session` is written without `current`, for example with only `udata.vst`, another script that runs `sbjs.init` after this one doesn't record referral visits that start a new session, as `session` already exists by then. List a `current` field to avoid this.
+* When `session` is written without `current`, for example with only `udata` fields, another script that runs `sbjs.init` after this one doesn't record referral visits that start a new session, as `session` already exists by then. List a `current` field to avoid this.
 * Unknown paths are ignored. If no path is valid, all fields are written.
 * `promocode` only writes `sbjs_promo` when `promo.code` is listed.
 

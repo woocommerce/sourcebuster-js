@@ -175,7 +175,7 @@ var configs = [
   { fields: ['current.typ', 'current.src', 'session.pgs'], written: ATTRIBUTION },
   { fields: ['udata.vst'], written: { session: ['pgs'], udata: ['vst'] } },
   { fields: ['session.cpg'], written: { session: ['cpg', 'pgs'], udata: ['vst'] } },
-  { fields: ['udata.uag'], written: { udata: ['uag'] } }
+  { fields: ['udata.uag'], written: { session: ['pgs'], udata: ['vst', 'uag'] } }
 ];
 
 [false, true].forEach(function(base64) {
@@ -218,7 +218,8 @@ var configs = [
     [WC_FIELDS, ['long UTM link', 'returning visit', 'search referral']],
     [['current.typ', 'current.src', 'session.pgs'], ['long UTM link', 'returning visit', 'search referral']],
     // Without `current`, the other script doesn't record referral visits when it runs second (see README)
-    [['udata.vst'], ['long UTM link', 'search referral']]
+    [['udata.vst'], ['long UTM link', 'search referral']],
+    [['udata.uag'], ['long UTM link', 'search referral']]
   ].forEach(function(test) {
     test[1].forEach(function(name) {
       var steps  = scenarios[name],
@@ -292,6 +293,19 @@ var configs = [
       assert.deepStrictEqual(got.current, want.current, 'spring -> summer, step ' + i + ': current' + mode);
       assert.deepStrictEqual(got.current_add, want.current_add, 'spring -> summer, step ' + i + ': current_add' + mode);
     });
+  });
+});
+
+// Field names from cookies are only data: older copies don't escape `|`, so a URL can add fields
+[false, true].forEach(function(base64) {
+  ['hasOwnProperty', '__proto__', 'constructor', 'toString'].forEach(function(name) {
+    var b    = new Browser(),
+        url  = page + '/?x=|||' + name + '=1',
+        mode = ' (' + name + ', base64=' + base64 + ')';
+    b.write('sbjs_session=' + encodeURIComponent('pgs=1|||cpg=' + url + '|||' + name + '=x|||boom=y') + '; domain=.' + HOST + '; path=/');
+    var got = b.visit(internal, url, prefsFor(base64, ['current.typ', 'session.pgs', 'udata.vst']));
+    // Unknown fields are dropped by the cookie budgets, `cpg` is kept
+    assert.deepStrictEqual(got.session, { pgs: '2', cpg: page + '/?x=' }, 'session' + mode);
   });
 });
 
