@@ -15,8 +15,7 @@ module.exports = function(prefs) {
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime,
-      fields    = p.fields,
-      new_attribution = false;
+      fields    = p.fields;
 
   cookies.setBase64Flag( p.base64 );
 
@@ -302,61 +301,63 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
-    new_attribution = true;
     setCookie(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime);
     if (!cookies.get(data.containers.first_extra)) {
-      if (fields && !fields[data.containers.first_extra] && (fields[data.containers.current] || fields[data.containers.session])) {
-        // Written in full even when not listed: another script that runs `sbjs.init` after this one
-        // sees `current` or `session`, so it no longer records this visit in `first_add` itself
-        cookies.set(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime, domain, isolate);
-      } else {
-        setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
-      }
+      setCookie(data.containers.first_extra, data.pack.extra(p.timezone_offset), lifetime);
     }
   }
 
-  // Some containers decide how others are written, so keep them whenever those are written:
-  // `current` is copied into `first`, and whether it exists decides `typein` attribution,
-  // `session` existing decides `referral` attribution and the visit count in `udata`.
+  // The attribution containers are written in full (`true`), as their fields belong together.
+  // Listing a field of `current`, `current_add`, `first` or `first_add` writes `current`, `current_add`
+  // and `first_add`, and `first` when it is listed:
+  // - `current` and `current_add` describe the same visit, so they are written together
+  // - `current` is copied into `first`, and whether it exists decides `typein` attribution
+  // - another script that runs `sbjs.init` after this one sees `current`, so it no longer records
+  //   the visit in `current_add` and `first_add` itself
+  // `session` existing decides `referral` attribution and the visit count in `udata`, so `session.pgs`
+  // and `udata.vst` are written with `current` and with each other. Another script that runs after
+  // this one sees `session`, so it no longer counts the visit itself.
   function addRequiredFields() {
     var c = data.containers;
 
-    if (fields[c.first]) {
-      addFields(c.current, fields[c.first]);
-    }
-    if (!fields[c.current] && (fields[c.current_extra] || fields[c.first_extra])) {
-      addFields(c.current, [data.aliases.main.type]);
-    }
-    if (
-        !fields[c.session] &&
-        (fields[c.current] || (fields[c.udata] && utils.hasKey(fields[c.udata], data.aliases.udata.visits)))
-    ) {
-      addFields(c.session, [data.aliases.session.pages_seen]);
-    }
-  }
-
-  function addFields(name, keys) {
-    fields[name] = fields[name] || [];
-    for (var i = 0; i < keys.length; i++) {
-      if (!utils.hasKey(fields[name], keys[i])) {
-        fields[name].push(keys[i]);
+    if (fields[c.current] || fields[c.current_extra] || fields[c.first] || fields[c.first_extra]) {
+      fields[c.current] = fields[c.current_extra] = fields[c.first_extra] = true;
+      if (fields[c.first]) {
+        fields[c.first] = true;
       }
     }
+    if (
+        fields[c.current] || fields[c.session] ||
+        (fields[c.udata] && utils.hasKey(fields[c.udata], data.aliases.udata.visits))
+    ) {
+      addField(c.session, data.aliases.session.pages_seen);
+      addField(c.udata, data.aliases.udata.visits);
+    }
   }
 
-  // Writes the container, with only the listed fields when `fields` is set
+  function addField(name, key) {
+    fields[name] = fields[name] || [];
+    if (!utils.hasKey(fields[name], key)) {
+      fields[name].push(key);
+    }
+  }
+
+  // Writes the container, with only the listed fields of `session` and `udata` when `fields` is set
   function setCookie(name, value, minutes) {
     if (fields) {
       if (!fields[name]) {
         return;
       }
-      value = mergeFields(name, value);
+      if (fields[name] !== true) {
+        value = mergeFields(name, value);
+      }
     }
     cookies.set(name, value, minutes, domain, isolate);
   }
 
   // Takes the listed fields from `value`, and keeps the unlisted fields of the existing cookie,
-  // which another script that runs `sbjs.init` without `fields` may have written
+  // which another script that runs `sbjs.init` without `fields` may have written. `session` and
+  // `udata` are rewritten on every page view, so these belong to the same visit.
   function mergeFields(name, value) {
     if (typeof value !== 'string') {
       return value;
@@ -368,17 +369,13 @@ module.exports = function(prefs) {
         i,
         key;
 
-    // `session` and `udata` are rewritten on every page view. The other containers belong to an
-    // attribution, so their unlisted fields are dropped when this page view starts a new one.
-    var keep = name === data.containers.session || name === data.containers.udata || !new_attribution;
-
     for (i = 0; i < written.keys.length; i++) {
       key = written.keys[i];
       if (utils.hasKey(keys, key)) {
         merged.push(key + '=' + written.values[key]);
       }
     }
-    for (i = 0; keep && i < existing.keys.length; i++) {
+    for (i = 0; i < existing.keys.length; i++) {
       key = existing.keys[i];
       if (!utils.hasKey(keys, key)) {
         merged.push(key + '=' + existing.values[key]);

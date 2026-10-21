@@ -161,22 +161,21 @@ function runBoth(steps, a, b) {
   });
 }
 
-function byContainer(fields) {
-  var map = {};
-  fields.forEach(function(f) {
-    var path = f.split('.');
-    (map[path[0]] = map[path[0]] || []).push(path[1]);
-  });
-  return map;
-}
+// The attribution containers are written in full
+var MAIN  = ['typ', 'src', 'mdm', 'cmp', 'cnt', 'trm', 'id', 'plt', 'fmt', 'tct'],
+    EXTRA = ['fd', 'ep', 'rf'],
+    ATTRIBUTION = { current: MAIN, current_add: EXTRA, first_add: EXTRA, session: ['pgs'], udata: ['vst'] };
 
+// `written` lists the fields each config writes
 var configs = [
-  { fields: WC_FIELDS, extra: { first_add: ['fd', 'ep', 'rf'] } },
-  { fields: ['first.src', 'first.typ'], extra: { current: ['src', 'typ'], session: ['pgs'], first_add: ['fd', 'ep', 'rf'] } },
-  { fields: ['current_add.ep'], extra: { current: ['typ'], session: ['pgs'], first_add: ['fd', 'ep', 'rf'] } },
-  { fields: ['current.typ', 'current.src'], extra: { session: ['pgs'], first_add: ['fd', 'ep', 'rf'] } },
-  { fields: ['udata.vst'], extra: { session: ['pgs'], first_add: ['fd', 'ep', 'rf'] } },
-  { fields: ['udata.uag'] }
+  { fields: WC_FIELDS, written: { current: MAIN, current_add: EXTRA, first_add: EXTRA, session: ['pgs'], udata: ['vst', 'uag'] } },
+  { fields: ['first.src', 'first.typ'], written: Object.assign({ first: MAIN }, ATTRIBUTION) },
+  { fields: ['current_add.ep'], written: ATTRIBUTION },
+  { fields: ['current.typ', 'current.src'], written: ATTRIBUTION },
+  { fields: ['current.typ', 'current.src', 'session.pgs'], written: ATTRIBUTION },
+  { fields: ['udata.vst'], written: { session: ['pgs'], udata: ['vst'] } },
+  { fields: ['session.cpg'], written: { session: ['cpg', 'pgs'], udata: ['vst'] } },
+  { fields: ['udata.uag'], written: { udata: ['uag'] } }
 ];
 
 [false, true].forEach(function(base64) {
@@ -193,23 +192,19 @@ var configs = [
 
     configs.forEach(function(config) {
       var res     = run(steps, prefsFor(base64, config.fields)),
-          listed  = byContainer(config.fields),
-          allowed = byContainer(config.fields),
+          written = config.written,
           label   = name + ', ' + config.fields.join(' ') + mode;
-      Object.keys(config.extra || {}).forEach(function(c) {
-        allowed[c] = (allowed[c] || []).concat(config.extra[c]);
-      });
 
       res.forEach(function(r, i) {
-        // Listed fields keep the same values as without the option
-        Object.keys(listed).forEach(function(c) {
-          listed[c].forEach(function(f) {
+        // Written fields keep the same values as without the option
+        Object.keys(written).forEach(function(c) {
+          written[c].forEach(function(f) {
             assert.strictEqual(r.get[c][f], plain[i].get[c][f], label + ', step ' + i + ': ' + c + '.' + f);
           });
         });
-        // Only listed and required fields are stored, unlisted fields are not stored as empty values
+        // Nothing else is stored, and fields are not stored as empty values
         CONTAINERS.forEach(function(c) {
-          var want = (allowed[c] || []).filter(function(f) { return typeof plain[i].get[c][f] !== 'undefined'; });
+          var want = (written[c] || []).filter(function(f) { return typeof plain[i].get[c][f] !== 'undefined'; });
           assert.deepStrictEqual(Object.keys(r.get[c]).sort(), want.sort(), label + ', step ' + i + ': ' + c);
         });
         assert(r.cookies['sbjs_migrations@.' + HOST], label + ', step ' + i + ': sbjs_migrations missing');
@@ -219,33 +214,47 @@ var configs = [
 
   // Another script runs `sbjs.init` without `fields` on the same pages: the cookies end up
   // the same as when both run without `fields`, in either order
-  ['long UTM link', 'returning visit', 'search referral'].forEach(function(name) {
-    var steps  = scenarios[name],
-        other  = { key: 'other', prefs: prefsFor(base64) },
-        plain  = { key: 'wc', prefs: prefsFor(base64) },
-        listed = { key: 'wc', prefs: prefsFor(base64, WC_FIELDS) };
+  [
+    [WC_FIELDS, ['long UTM link', 'returning visit', 'search referral']],
+    [['current.typ', 'current.src', 'session.pgs'], ['long UTM link', 'returning visit', 'search referral']],
+    // Without `current`, the other script doesn't record referral visits when it runs second (see README)
+    [['udata.vst'], ['long UTM link', 'search referral']]
+  ].forEach(function(test) {
+    test[1].forEach(function(name) {
+      var steps  = scenarios[name],
+          other  = { key: 'other', prefs: prefsFor(base64) },
+          plain  = { key: 'wc', prefs: prefsFor(base64) },
+          listed = { key: 'wc', prefs: prefsFor(base64, test[0]) };
 
-    [[listed, other, plain, other], [other, listed, other, plain]].forEach(function(order) {
-      var label = name + ', ' + (order[0].key === 'wc' ? 'WooCommerce first' : 'other script first') + mode,
-          ref   = runBoth(steps, order[2], order[3]),
-          res   = runBoth(steps, order[0], order[1]);
-      res.forEach(function(r, i) {
-        assert.deepStrictEqual(r.cookies, ref[i].cookies, label + ', step ' + i + ': cookies');
-        assert.deepStrictEqual(r.other, ref[i].other, label + ', step ' + i + ': other sbjs.get');
-        WC_FIELDS.forEach(function(f) {
-          var path = f.split('.');
-          assert.strictEqual(r.wc[path[0]][path[1]], ref[i].wc[path[0]][path[1]], label + ', step ' + i + ': ' + f);
+      [[listed, other, plain, other], [other, listed, other, plain]].forEach(function(order) {
+        var label = name + ', ' + test[0].join(' ') + ', ' + (order[0].key === 'wc' ? 'listed first' : 'other script first') + mode,
+            ref   = runBoth(steps, order[2], order[3]),
+            res   = runBoth(steps, order[0], order[1]);
+        res.forEach(function(r, i) {
+          assert.deepStrictEqual(r.cookies, ref[i].cookies, label + ', step ' + i + ': cookies');
+          assert.deepStrictEqual(r.other, ref[i].other, label + ', step ' + i + ': other sbjs.get');
+          test[0].forEach(function(f) {
+            var path = f.split('.');
+            assert.strictEqual(r.wc[path[0]][path[1]], ref[i].wc[path[0]][path[1]], label + ', step ' + i + ': ' + f);
+          });
         });
       });
     });
   });
 
+  // The documented exception: with only `udata.vst`, a referral that starts a new session is
+  // not recorded by another script that runs second
+  var vstOnly = runBoth(scenarios['returning visit'],
+    { key: 'wc', prefs: prefsFor(base64, ['udata.vst']) }, { key: 'other', prefs: prefsFor(base64) });
+  assert.strictEqual(vstOnly[2].other.current.typ, 'typein', 'udata.vst only, referral after the session' + mode);
+
   // A visitor with cookies from before keeps them, the listed fields are updated as usual
   var before = new Browser(),
       ref    = new Browser();
+  var previous;
   [before, ref].forEach(function(b) {
     b.visit(longUtm, '', prefsFor(base64));
-    b.visit(internal, longUtm, prefsFor(base64));
+    previous = b.visit(internal, longUtm, prefsFor(base64));
     b.wait(3);
   });
   var old      = before.cookies(),
@@ -259,32 +268,31 @@ var configs = [
     var path = f.split('.');
     assert.strictEqual(upgraded[path[0]][path[1]], expected[path[0]][path[1]], 'existing visitor: ' + f + mode);
   });
+  // Unlisted fields of `session` and `udata` are kept
+  assert.strictEqual(upgraded.session.cpg, previous.session.cpg, 'existing visitor: session.cpg' + mode);
+  assert.strictEqual(upgraded.udata.uip, previous.udata.uip, 'existing visitor: udata.uip' + mode);
 
-  // Unlisted fields from an earlier attribution are not mixed into a new one
-  var mixed = new Browser();
-  mixed.visit(page + '/?utm_source=first&utm_content=hero', '', prefsFor(base64));
-  mixed.wait(1);
-  var second = mixed.visit(page + '/?utm_source=second', '', prefsFor(base64, ['current.typ', 'current.src', 'session.pgs']));
-  assert.strictEqual(second.current.src, 'second', 'new attribution' + mode);
-  assert.strictEqual(second.current.cnt, undefined, 'unlisted field kept from an earlier attribution' + mode);
-  mixed.wait(1);
-  var third = mixed.visit(internal, page + '/', prefsFor(base64, ['current.typ', 'current.src', 'session.pgs']));
-  assert.deepStrictEqual(third.current, second.current, 'current changed on a page view' + mode);
-
-  // Also when the listed fields of the new attribution are the same as the earlier one
-  var same    = new Browser(),
-      partial = ['current.typ', 'current.src', 'current_add.ep', 'session.pgs'];
-  same.visit(page + '/offer?utm_source=newsletter&utm_campaign=spring', 'https://mail.example.org/', prefsFor(base64));
-  var spring = same.visit(internal, page + '/offer', prefsFor(base64));
-  same.wait(60);
-  var summer = same.visit(page + '/offer?utm_source=newsletter&utm_campaign=summer', '', prefsFor(base64, partial));
-  assert.strictEqual(summer.current.src, 'newsletter', 'same source' + mode);
-  assert.strictEqual(summer.current.cmp, undefined, 'campaign kept from an earlier attribution' + mode);
-  assert.strictEqual(summer.current_add.fd, undefined, 'fd kept from an earlier attribution' + mode);
-  assert.strictEqual(summer.current_add.rf, undefined, 'rf kept from an earlier attribution' + mode);
-  same.wait(1);
-  var next = same.visit(internal, page + '/offer', prefsFor(base64));
-  assert.notStrictEqual(next.current.cmp, spring.current.cmp, 'full init still reports the earlier campaign' + mode);
+  // A new attribution replaces all fields of `current` and `current_add`, also when the listed
+  // fields have the same values as before
+  var partial = ['current.typ', 'current.src', 'session.pgs'];
+  [[partial, partial], [null, partial]].forEach(function(lists) {
+    var listedRun = new Browser(),
+        plainRun  = new Browser(),
+        visits    = [
+          [page + '/offer?utm_source=newsletter&utm_campaign=spring&utm_content=hero', 'https://mail.example.org/', 0],
+          [internal, page + '/offer', 1],
+          [page + '/offer?utm_source=newsletter&utm_campaign=summer', '', 60],
+          [internal, page + '/offer', 1]
+        ];
+    visits.forEach(function(v, i) {
+      listedRun.wait(v[2]);
+      plainRun.wait(v[2]);
+      var got  = listedRun.visit(v[0], v[1], prefsFor(base64, i < 2 ? lists[0] : lists[1])),
+          want = plainRun.visit(v[0], v[1], prefsFor(base64));
+      assert.deepStrictEqual(got.current, want.current, 'spring -> summer, step ' + i + ': current' + mode);
+      assert.deepStrictEqual(got.current_add, want.current_add, 'spring -> summer, step ' + i + ': current_add' + mode);
+    });
+  });
 });
 
 var full   = run(scenarios['long UTM link'], prefsFor(false)),
