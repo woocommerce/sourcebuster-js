@@ -15,7 +15,8 @@ module.exports = function(prefs) {
   var domain    = p.domain.host,
       isolate   = p.domain.isolate,
       lifetime  = p.lifetime,
-      fields    = p.fields;
+      fields    = p.fields,
+      new_attribution = false;
 
   cookies.setBase64Flag( p.base64 );
 
@@ -301,6 +302,7 @@ module.exports = function(prefs) {
   }
 
   function setFirstAndCurrentExtraData() {
+    new_attribution = true;
     setCookie(data.containers.current_extra, data.pack.extra(p.timezone_offset), lifetime);
     if (!cookies.get(data.containers.first_extra)) {
       if (fields && !fields[data.containers.first_extra] && (fields[data.containers.current] || fields[data.containers.session])) {
@@ -367,16 +369,8 @@ module.exports = function(prefs) {
         key;
 
     // `session` and `udata` are rewritten on every page view. The other containers belong to an
-    // attribution, so their unlisted fields are only kept when the listed ones are the same.
-    var keep = name === data.containers.session || name === data.containers.udata;
-    if (!keep) {
-      keep = true;
-      for (i = 0; i < keys.length; i++) {
-        if (existing.values[keys[i]] !== written.values[keys[i]]) {
-          keep = false;
-        }
-      }
-    }
+    // attribution, so their unlisted fields are dropped when this page view starts a new one.
+    var keep = name === data.containers.session || name === data.containers.udata || !new_attribution;
 
     for (i = 0; i < written.keys.length; i++) {
       key = written.keys[i];

@@ -13,13 +13,13 @@ global.btoa = global.btoa || function(value) {
 global.atob = global.atob || function(value) {
   return Buffer.from(value, 'base64').toString('binary');
 };
-global.navigator = { userAgent: UA };
+Object.defineProperty(global, 'navigator', { value: { userAgent: UA }, configurable: true });
 
-// The fields WooCommerce reads, without `udata.uag`
+// The fields WooCommerce reads (`default_fields` in `OrderAttributionMeta`)
 var WC_FIELDS = [
   'current.typ', 'current.src', 'current.mdm', 'current.cmp', 'current.cnt', 'current.trm',
   'current.id', 'current.plt', 'current.fmt', 'current.tct',
-  'current_add.fd', 'current_add.ep', 'current_add.rf', 'session.pgs', 'udata.vst'
+  'current_add.fd', 'current_add.ep', 'current_add.rf', 'session.pgs', 'udata.vst', 'udata.uag'
 ];
 
 var CONTAINERS = ['current', 'current_add', 'first', 'first_add', 'session', 'udata', 'promo'];
@@ -270,6 +270,21 @@ var configs = [
   mixed.wait(1);
   var third = mixed.visit(internal, page + '/', prefsFor(base64, ['current.typ', 'current.src', 'session.pgs']));
   assert.deepStrictEqual(third.current, second.current, 'current changed on a page view' + mode);
+
+  // Also when the listed fields of the new attribution are the same as the earlier one
+  var same    = new Browser(),
+      partial = ['current.typ', 'current.src', 'current_add.ep', 'session.pgs'];
+  same.visit(page + '/offer?utm_source=newsletter&utm_campaign=spring', 'https://mail.example.org/', prefsFor(base64));
+  var spring = same.visit(internal, page + '/offer', prefsFor(base64));
+  same.wait(60);
+  var summer = same.visit(page + '/offer?utm_source=newsletter&utm_campaign=summer', '', prefsFor(base64, partial));
+  assert.strictEqual(summer.current.src, 'newsletter', 'same source' + mode);
+  assert.strictEqual(summer.current.cmp, undefined, 'campaign kept from an earlier attribution' + mode);
+  assert.strictEqual(summer.current_add.fd, undefined, 'fd kept from an earlier attribution' + mode);
+  assert.strictEqual(summer.current_add.rf, undefined, 'rf kept from an earlier attribution' + mode);
+  same.wait(1);
+  var next = same.visit(internal, page + '/offer', prefsFor(base64));
+  assert.notStrictEqual(next.current.cmp, spring.current.cmp, 'full init still reports the earlier campaign' + mode);
 });
 
 var full   = run(scenarios['long UTM link'], prefsFor(false)),
