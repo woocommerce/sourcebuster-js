@@ -2,7 +2,7 @@
 
 var data              = require('../data'),
     delimiter         = data.delimiter,
-    requestBudget     = 2048,
+    requestBudget     = 2304,
     containerBudgets  = {},
     allowedFields     = {},
     fieldBudgets      = {
@@ -26,6 +26,10 @@ var data              = require('../data'),
       uag: 512,
       code: 64
     },
+    // When a cookie is still over budget after the field caps, fields are emptied
+    // in this order until the rest fits. The field that makes it fit is then
+    // trimmed to the largest size that fits instead of being emptied.
+    // Fields at the end of the list are kept the longest.
     reductionOrder = [
       'uag', 'rf', 'cnt', 'trm', 'plt', 'fmt', 'tct', 'ep', 'cpg',
       'id', 'cmp', 'uip', 'src', 'mdm', 'typ', 'fd', 'pgs', 'vst', 'code'
@@ -38,7 +42,9 @@ containerBudgets[data.containers.first]         = 520;
 containerBudgets[data.containers.current_extra] = 266;
 containerBudgets[data.containers.first_extra]   = 266;
 containerBudgets[data.containers.session]       = 144;
-containerBudgets[data.containers.udata]         = 188;
+// Keeps common desktop and mobile user agents complete, also in Base64 mode.
+// Very long in-app browser user agents can still be trimmed.
+containerBudgets[data.containers.udata]         = 470;
 containerBudgets[data.containers.promocode]     = 40;
 containerBudgets[data.service.migrations]       = 40;
 
@@ -64,35 +70,38 @@ function encodeCookieValue(value, useBase64) {
   return useBase64 ? btoa(encoded).replace(/=+$/, '') : encoded;
 }
 
+// Values from the URL are still percent encoded. Trim on whole units only:
+// a complete %XX UTF-8 character, a surrogate pair, or a single character.
+// Cutting inside an escape makes decodeURIComponent fail on the whole field.
+var trimUnits = new RegExp(
+  '%[0-7][0-9A-F]' +
+  '|%[CD][0-9A-F]%[89AB][0-9A-F]' +
+  '|%E[0-9A-F](?:%[89AB][0-9A-F]){2}' +
+  '|%F[0-7](?:%[89AB][0-9A-F]){3}' +
+  '|[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]' +
+  '|[\\s\\S]',
+  'gi'
+);
+
 function trimToEncodedBytes(value, maxBytes) {
-  var clean = String(value || '').replace(/[\u0000-\u001f\u007f]/g, ''),
+  var units = String(value || '').replace(/[\u0000-\u001f\u007f]/g, '').match(trimUnits) || [],
       out = '',
       used = 0,
-      i = 0,
-      character,
+      i,
       encoded;
 
-  while (i < clean.length) {
-    character = clean.charAt(i);
-    if (
-      /[\uD800-\uDBFF]/.test(character) &&
-      i + 1 < clean.length &&
-      /[\uDC00-\uDFFF]/.test(clean.charAt(i + 1))
-    ) {
-      character += clean.charAt(i + 1);
-    }
+  for (i = 0; i < units.length; i++) {
     try {
-      encoded = encodeData(character);
+      encoded = encodeData(units[i]);
     } catch (error) {
-      i += character.length;
+      // Skip lone surrogates, which encodeURIComponent rejects.
       continue;
     }
     if (used + encoded.length > maxBytes) {
       break;
     }
-    out += character;
+    out += units[i];
     used += encoded.length;
-    i += character.length;
   }
   return out;
 }

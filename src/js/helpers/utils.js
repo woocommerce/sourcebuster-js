@@ -31,13 +31,6 @@ module.exports = {
 
   randomInt: function(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  },
-
-  truncate: function(string, max_length) {
-    if (typeof string !== 'string' || !max_length || string.length <= max_length) {
-      return string;
-    }
-    return string.substring(0, max_length);
   }
 
 };

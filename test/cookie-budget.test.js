@@ -119,4 +119,96 @@ assert.strictEqual(
   'https://shop.example/product?utm_campaign=legacy'
 );
 
+// Run sbjs.init against real percent-encoded URLs, so field budgets cut raw escape sequences.
+var sbjs = require('../src/js/sourcebuster');
+
+function setBrowser(search, pathname) {
+  var jar = {};
+  global.window = { location: { search: search } };
+  global.document = {
+    location: { href: 'https://shop.example' + pathname + search, hostname: 'shop.example', pathname: pathname },
+    referrer: ''
+  };
+  Object.defineProperty(global.document, 'cookie', {
+    get: function() {
+      return Object.keys(jar).map(function(name) { return name + '=' + jar[name]; }).join('; ');
+    },
+    set: function(value) {
+      var pair = value.split(';')[0],
+          separator = pair.indexOf('='),
+          expires = /expires=([^;]+)/.exec(value);
+      if (expires && new Date(expires[1]) < new Date()) {
+        delete jar[pair.substring(0, separator)];
+      } else {
+        jar[pair.substring(0, separator)] = pair.substring(separator + 1);
+      }
+    }
+  });
+}
+
+function assertDecodedPrefix(actual, expected, label) {
+  assert(actual.length > 0, label + ' was emptied');
+  assert.strictEqual(expected.indexOf(actual), 0, label + ' is not a clean prefix: ' + actual);
+}
+
+Object.defineProperty(global, 'navigator', { value: { userAgent: 'Mozilla/5.0' }, configurable: true });
+
+// Mix 2-byte, 3-byte and 4-byte UTF-8 characters.
+var wide = new Array(9).join('\u00e9\u65e5\u672c\u8a9e\ud83d\ude00\u30ad\u30e3\u30f3\u30da'),
+    shift,
+    padding,
+    content,
+    path;
+
+[false, true].forEach(function(useBase64) {
+  for (shift = 0; shift < 9; shift++) {
+    padding = new Array(shift + 1).join('x');
+    content = padding + wide;
+    path = '/' + padding + wide;
+    setBrowser(
+      '?utm_source=google&utm_content=' + encodeURIComponent(content),
+      '/' + padding + encodeURIComponent(wide)
+    );
+    sbjs.init({ base64: useBase64 });
+    assertDecodedPrefix(sbjs.get.current.cnt, content, 'cnt base64=' + useBase64 + ' shift=' + shift);
+    assertDecodedPrefix(sbjs.get.current_add.ep, path, 'ep base64=' + useBase64 + ' shift=' + shift);
+    assertDecodedPrefix(sbjs.get.session.cpg, path, 'cpg base64=' + useBase64 + ' shift=' + shift);
+
+    // A delimiter, raw or browser-encoded, is stored as %7C%7C%7C. The cut must not leave a partial escape.
+    content = new Array(shift + 245).join('a') + '|||' + 'b';
+    ['|||', '%7C%7C%7C'].forEach(function(delimiter) {
+      setBrowser('?utm_source=google&utm_content=' + content.replace('|||', delimiter), '/');
+      sbjs.init({ base64: useBase64 });
+      assertDecodedPrefix(sbjs.get.current.cnt, content, 'delimiter base64=' + useBase64 + ' shift=' + shift);
+      assert.strictEqual(sbjs.get.current.trm, '(none)', 'delimiter cut broke the next field');
+    });
+  }
+});
+
+['foo|', 'foo||', 'a|b'].forEach(function(content) {
+  var packed = data.pack.main({
+        type: 'utm', source: 'google', medium: 'cpc', campaign: 'spring',
+        content: content, term: 'x', id: '(none)', platform: '(none)',
+        format: '(none)', tactic: '(none)'
+      }),
+      parsed;
+  cookies.setBase64Flag(false);
+  setBrowser('', '/');
+  parsed = parsedPrepared(data.containers.current, packed);
+  assert.strictEqual(parsed.cnt, content, 'pipe changed the content value');
+  assert.strictEqual(parsed.trm, 'x', 'trailing pipe broke the next field');
+});
+
+var desktopAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36';
+[false, true].forEach(function(useBase64) {
+  cookies.setBase64Flag(useBase64);
+  setBrowser('', '/');
+  assert.strictEqual(
+    parsedPrepared(data.containers.udata, 'vst=1|||uip=(none)|||uag=' + desktopAgent).uag,
+    desktopAgent,
+    'desktop user agent was truncated with base64=' + useBase64
+  );
+});
+
 console.log('cookie budget tests passed');

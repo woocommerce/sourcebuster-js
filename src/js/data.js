@@ -4,9 +4,10 @@ var terms = require('./terms'),
     uri   = require('./helpers/uri'),
     utils = require('./helpers/utils');
 
-// Escape field delimiters before cookie-budget parsing.
+// Escape every pipe before cookie-budget parsing. A trailing "|" or "||" would
+// otherwise merge with the "|||" delimiter and break the next field.
 function packValue(value) {
-  return String(value || '').replace(/\|\|\|/g, '%7C%7C%7C');
+  return String(value || '').replace(/\|/g, '%7C');
 }
 
 function landingPath() {

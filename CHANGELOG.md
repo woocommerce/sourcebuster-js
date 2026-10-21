@@ -1,8 +1,14 @@
 ## 1.2.0
 
-Features:
-- Bound managed Sourcebuster cookie payloads to 2,048 request bytes in plain and Base64 modes.
-- Removed query strings from stored landing and referrer paths to prevent duplicate URL payloads.
+Fixes:
+- Bound managed Sourcebuster cookie payloads to 2,304 request bytes in plain and Base64 modes, to avoid HTTP 400/414 errors from oversized Cookie headers.
+- Trim long values on whole characters and whole percent-encoded sequences, so non-ASCII UTM values still decode after trimming.
+- Escape every `|` in stored values, so a value ending in `|` cannot break the `|||` field delimiter.
+
+Data changes:
+- `ep` and `cpg` now store the page path only, without origin, query string or hash. Example: `/product/test-shirt/` instead of `https://shop.example/product/test-shirt/?utm_source=google`.
+- `rf` now stores the referrer origin and path, without query string or hash.
+- Long values are trimmed to per-field and per-cookie byte budgets. When a cookie is still over budget, fields are emptied in a fixed order, starting with `uag`, `rf` and `cnt`.
 
 ## 1.1.2
 
