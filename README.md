@@ -41,7 +41,7 @@ gem install slim
 
 ```shell
 # with `npm`
-npm install github:woocommerce/sourcebuster-js#v1.1.2
+npm install github:woocommerce/sourcebuster-js#v1.2.0
 ```
 
 Or you can [download this repo](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) and use `sourcebuster.min.js` from the `/dist` folder.
@@ -502,10 +502,10 @@ Additional info about the visit, when the `current` source was written.
 Date and time of the visit. Format: `yyyy-mm-dd hh:mm:ss`. Time zone can be customized via `timezone_offset`.
 
 * `sbjs.get.current_add.ep`
-Entrance point.
+Entrance point path, without origin, query string or hash. Example: `/product/test-shirt/`.
 
 * `sbjs.get.current_add.rf`
-Referer URL.
+Referer URL, without query string or hash.
 
 
 #### `sbjs.get.first` & `sbjs.get.first_add`
@@ -519,7 +519,7 @@ Current opened session data.
 How many pages user have seen during the current session.
 
 * `sbjs.get.session.cpg`
-Current page URL.
+Current page path, without origin, query string or hash.
 
 
 #### `sbjs.get.udata`
@@ -553,6 +553,8 @@ All data are stored in cookies. When the script is pushed to production, visitor
 * sbjs_udata
 * sbjs_promo
 
+All managed cookies together stay within 2,304 bytes of the Cookie request header, in plain and Base64 modes. Each field and each cookie has a byte budget. Long values are trimmed on whole characters. When a cookie is still over budget, fields are emptied in this order until it fits. The field that makes it fit is trimmed instead of emptied: `uag`, `rf`, `cnt`, `trm`, `plt`, `fmt`, `tct`, `ep`, `cpg`, `id`, `cmp`, `uip`, `src`, `mdm`, `typ`, `fd`, `pgs`, `vst`, `code`.
+
 #### sbjs_current & sbjs_first
 
 *Format*  
@@ -581,13 +583,13 @@ typ=typein|||src=(direct)|||mdm=(none)|||cmp=(none)|||cnt=(none)|||trm=(none)
 #### sbjs_current_add & sbjs_first_add
 
 *Format*  
-`fd=2014-06-11 17:28:26|||ep=http://statica.alexfedoseev.com/sourcebuster-js/|||rf=https://www.google.com`
+`fd=2014-06-11 17:28:26|||ep=/sourcebuster-js/|||rf=https://www.google.com/`
 
 
 #### sbjs_session
 
 *Format*
-`pgs=3|||cpg=http://statica.alexfedoseev.com/sourcebuster-js/`
+`pgs=3|||cpg=/sourcebuster-js/`
 
 
 #### sbjs_udata
