@@ -41,7 +41,7 @@ gem install slim
 
 ```shell
 # with `npm`
-npm install github:woocommerce/sourcebuster-js#v1.2.0
+npm install github:woocommerce/sourcebuster-js#v1.3.0
 ```
 
 Or you can [download this repo](https://github.com/woocommerce/sourcebuster-js/archive/master.zip) and use `sourcebuster.min.js` from the `/dist` folder.

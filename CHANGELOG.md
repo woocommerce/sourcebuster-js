@@ -1,23 +1,25 @@
-## Unreleased
+## 1.3.0
 
 Features:
 - Add `fields` option to only write the listed `container.field` paths to cookies
 
 Fixes:
-- Store URL values decoded once, so a non-ASCII character uses its UTF-8 escape once instead of twice. A Japanese `utm_content` now keeps about 28 characters instead of 17 in plain mode, and 17 instead of 10 in Base64 mode. Values read through `sbjs.get` are unchanged.
-- Keep malformed percent escapes in URL values as they are, instead of decoding them to unrelated characters.
-
-## 1.2.0
-
-Fixes:
 - Bound managed Sourcebuster cookie payloads to 2,304 request bytes in plain and Base64 modes, to avoid HTTP 400/414 errors from oversized Cookie headers.
 - Trim long values on whole characters and whole percent-encoded sequences, so non-ASCII UTM values still decode after trimming.
 - Escape every `|` in stored values, so a value ending in `|` cannot break the `|||` field delimiter.
+- Store URL values decoded once, so a non-ASCII character uses its UTF-8 escape once instead of twice. A Japanese `utm_content` now keeps about 28 characters instead of 17 in plain mode, and 17 instead of 10 in Base64 mode. Values read through `sbjs.get` are unchanged.
+- Keep malformed percent escapes in URL values as they are, instead of decoding them to unrelated characters.
 
 Data changes:
 - `ep` and `cpg` now store the page path only, without origin, query string or hash. Example: `/product/test-shirt/` instead of `https://shop.example/product/test-shirt/?utm_source=google`.
 - `rf` now stores the referrer origin and path, without query string or hash.
 - Long values are trimmed to per-field and per-cookie byte budgets. When a cookie is still over budget, fields are emptied in a fixed order, starting with `uag`, `rf` and `cnt`.
+
+## 1.2.0
+
+Features:
+- Add `base64` option to Base64-encode cookie contents
+- Add GA4 UTM parameters: `utm_source_platform`, `utm_creative_format` and `utm_marketing_tactic`
 
 ## 1.1.2
 
